@@ -6,7 +6,7 @@ local Window = Library:CreateWindow({
     Name = "Моё первое меню",
     LoadingTitle = "Amethyst UI",          -- Заголовок при загрузке
     LoadingSubtitle = "by namesick",         -- Подзаголовок
-    ToggleUIKeybind = Enum.KeyCode.G,      -- Клавиша для показа/скрытия (G)
+    ToggleUIKeybind = Enum.KeyCode.K,      -- Клавиша для показа/скрытия (K)
 })
 
 -- 3. Создаём вкладку

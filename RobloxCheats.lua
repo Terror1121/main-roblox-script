@@ -1,21 +1,21 @@
 -- 1. Подключаем Rayfield
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 2. Создаём окно (аналог твоего)
+-- 2. Создаём окно
 local Window = Rayfield:CreateWindow({
     Name = "Моё первое меню",
     LoadingTitle = "Rayfield UI",
     LoadingSubtitle = "by namesick",
-    ToggleUIKeybind = Enum.KeyCode.K, -- 👈 КЛАВИША K РАБОТАЕТ!
+    ToggleUIKeybind = Enum.KeyCode.K, -- Клавиша K для скрытия
 })
 
 -- 3. Создаём вкладку "Основное"
-local Tab = Window:CreateTab("Основное", 0) -- 0 = иконка (можно убрать)
+local Tab = Window:CreateTab("Основное", 0)
 
--- 4. Создаём секцию "Настройки"
+-- 4. Создаём секцию "Настройки" (ВНЕШНЯЯ)
 local Section = Tab:CreateSection("Настройки")
 
--- 5. Кнопка "Привет!" (полный аналог твоей)
+-- 5. СОЗДАЁМ КНОПКУ (ОНА БУДЕТ ВНУТРИ СЕКЦИИ)
 Section:CreateButton({
     Name = "Привет!",
     Callback = function()
@@ -23,7 +23,7 @@ Section:CreateButton({
     end
 })
 
--- 6. Ползунок "Громкость" (полный аналог твоего)
+-- 6. СОЗДАЁМ ПОЛЗУНОК (СЛАЙДЕР) (ТОЖЕ ВНУТРИ СЕКЦИИ)
 Section:CreateSlider({
     Name = "Громкость",
     Min = 0,

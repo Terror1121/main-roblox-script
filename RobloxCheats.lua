@@ -1,5 +1,6 @@
 -- 1. Подключаем Rayfield (актуальная версия)
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Подключаем актуальную версию Rayfield (2025)
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua'))()
 
 -- 2. Создаём окно
 local Window = Rayfield:CreateWindow({

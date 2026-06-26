@@ -1,21 +1,21 @@
--- 1. Подключаем Amethyst UI
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/J0se-j/My-Lua-Library/refs/heads/main/Booting-the-library.lua"))()
+-- 1. Подключаем Rayfield
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 2. Создаём окно
-local Window = Library:CreateWindow({
+-- 2. Создаём окно (аналог твоего)
+local Window = Rayfield:CreateWindow({
     Name = "Моё первое меню",
-    LoadingTitle = "Amethyst UI",          -- Заголовок при загрузке
-    LoadingSubtitle = "by namesick",         -- Подзаголовок
-    ToggleUIKeybind = Enum.KeyCode.K,      -- Клавиша для показа/скрытия (K)
+    LoadingTitle = "Rayfield UI",
+    LoadingSubtitle = "by namesick",
+    ToggleUIKeybind = Enum.KeyCode.K, -- 👈 КЛАВИША K РАБОТАЕТ!
 })
 
--- 3. Создаём вкладку
-local Tab = Window:CreateTab("Основное")
+-- 3. Создаём вкладку "Основное"
+local Tab = Window:CreateTab("Основное", 0) -- 0 = иконка (можно убрать)
 
--- 4. Создаём секцию внутри вкладки
+-- 4. Создаём секцию "Настройки"
 local Section = Tab:CreateSection("Настройки")
 
--- 5. Добавляем кнопку
+-- 5. Кнопка "Привет!" (полный аналог твоей)
 Section:CreateButton({
     Name = "Привет!",
     Callback = function()
@@ -23,13 +23,18 @@ Section:CreateButton({
     end
 })
 
--- 6. Добавляем ползунок (слайдер)
+-- 6. Ползунок "Громкость" (полный аналог твоего)
 Section:CreateSlider({
     Name = "Громкость",
     Min = 0,
     Max = 100,
     Default = 50,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    ValueName = "%",
     Callback = function(value)
         print("Громкость установлена на:", value)
     end
 })
+
+print("✅ Меню загружено! Нажми K для открытия/закрытия.")

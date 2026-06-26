@@ -1,28 +1,28 @@
--- 1. Подключаем библиотеку OrionLib
+-- 1. Подключаем OrionLib
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/DenDenZZZ/Orion-UI-Library/refs/heads/main/source')))()
 
--- 2. Создаём главное окно (убираем Intro, чтобы избежать ошибок с иконками)
+-- 2. Создаём окно
 local Window = OrionLib:MakeWindow({
     Name = "Моё первое меню",
     HidePremium = false,
     SaveConfig = false,
-    IntroEnabled = false,        -- Отключаем приветствие (чтобы не грузить иконки)
+    IntroEnabled = false,  -- Отключаем Intro, чтобы избежать ошибок с иконками
     IntroText = "Orion Loaded"
 })
 
--- 3. Создаём вкладку
+-- 3. Вкладка
 local Tab = Window:MakeTab({
     Name = "Основное",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
--- 4. Создаём секцию
+-- 4. Секция
 local Section = Tab:AddSection({
     Name = "Настройки"
 })
 
--- 5. Кнопка с уведомлением
+-- 5. КНОПКА (работает через уведомление)
 Section:AddButton({
     Name = "Привет!",
     Callback = function()
@@ -35,7 +35,7 @@ Section:AddButton({
     end
 })
 
--- 6. Ползунок
+-- 6. ПОЛЗУНОК
 Section:AddSlider({
     Name = "Громкость",
     Min = 0,
@@ -52,27 +52,30 @@ Section:AddSlider({
 -- 7. Инициализация
 OrionLib:Init()
 
--- 8. УПРАВЛЕНИЕ КЛАВИШЕЙ K (ИСПРАВЛЕННЫЙ МЕТОД)
+-- 8. УПРАВЛЕНИЕ КЛАВИШЕЙ K (ЧЕРЕЗ GUI)
 local UserInputService = game:GetService("UserInputService")
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.K then
-        -- Пробуем разные варианты названия метода
-        if OrionLib.Toggle then
-            OrionLib:Toggle()
-        elseif OrionLib.ToggleUI then
-            OrionLib:ToggleUI()
-        elseif OrionLib.ToggleUi then
-            OrionLib:ToggleUi()
+        -- Ищем GUI OrionLib и переключаем видимость
+        local gui = game.CoreGui:FindFirstChild("OrionGui")
+        if gui then
+            gui.Enabled = not gui.Enabled
+            print("Меню " .. (gui.Enabled and "показано" or "скрыто"))
         else
-            -- Если ничего не работает — показываем/скрываем через GUI
-            local gui = game.CoreGui:FindFirstChild("OrionGui")
-            if gui then
-                gui.Enabled = not gui.Enabled
+            -- Если не нашли OrionGui, пробуем другие имена
+            local possibleGuis = {"OrionGui", "OrionUI", "Orion"}
+            for _, name in ipairs(possibleGuis) do
+                local found = game.CoreGui:FindFirstChild(name)
+                if found then
+                    found.Enabled = not found.Enabled
+                    print("Меню " .. (found.Enabled and "показано" or "скрыто"))
+                    break
+                end
             end
         end
     end
 end)
 
-print("✅ Меню загружено! Нажми K.")
+print("✅ Меню загружено! Нажми K для открытия/закрытия.")

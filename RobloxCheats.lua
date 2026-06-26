@@ -1,37 +1,41 @@
--- 1. Подключаем библиотеку OrionLib
--- Используем актуальную ссылку [citation:1][citation:4][citation:7]
+-- 1. Подключаем OrionLib
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/DenDenZZZ/Orion-UI-Library/refs/heads/main/source')))()
 
--- 2. Создаём главное окно
+-- 2. Создаём окно
 local Window = OrionLib:MakeWindow({
-    Name = "Моё первое меню",  -- Название окна
-    HidePremium = false,       -- Показывать Premium статус
-    SaveConfig = false,        -- Отключаем сохранение настроек для простоты
-    IntroEnabled = true,       -- Показывать анимацию приветствия
-    IntroText = "Orion Loaded" -- Текст в анимации
+    Name = "Моё первое меню",
+    HidePremium = false,
+    SaveConfig = false,
+    IntroEnabled = true,
+    IntroText = "Orion Loaded"
 })
 
--- 3. Создаём вкладку
+-- 3. Вкладка
 local Tab = Window:MakeTab({
     Name = "Основное",
-    Icon = "rbxassetid://4483345998", -- Иконка рядом с названием
+    Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
--- 4. Создаём секцию внутри вкладки
+-- 4. Секция
 local Section = Tab:AddSection({
     Name = "Настройки"
 })
 
--- 5. Добавляем КНОПКУ
+-- 5. КНОПКА С УВЕДОМЛЕНИЕМ (работает визуально)
 Section:AddButton({
     Name = "Привет!",
     Callback = function()
-        print("Кнопка нажата!") -- Здесь будет твой код
+        OrionLib:MakeNotification({
+            Name = "Уведомление",
+            Content = "Кнопка нажата! 🎉",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
     end
 })
 
--- 6. Добавляем ПОЛЗУНОК (Слайдер)
+-- 6. ПОЛЗУНОК
 Section:AddSlider({
     Name = "Громкость",
     Min = 0,
@@ -41,11 +45,20 @@ Section:AddSlider({
     Increment = 1,
     ValueName = "%",
     Callback = function(Value)
-        print("Громкость установлена на:", Value) -- Здесь будет твой код
+        print("Громкость установлена на:", Value)
     end    
 })
 
--- 7. ОБЯЗАТЕЛЬНО инициализируем библиотеку в конце [citation:1][citation:4]
+-- 7. Инициализация
 OrionLib:Init()
 
-print("✅ Меню загружено! Нажми K для открытия/закрытия.")
+-- 8. Управление клавишей K
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.K then
+        OrionLib:ToggleUi()
+    end
+end)
+
+print("✅ Меню загружено! Нажми K.")

@@ -1,4 +1,4 @@
--- 1. Подключаем Rayfield
+-- 1. Подключаем Rayfield (актуальная версия)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- 2. Создаём окно
@@ -6,16 +6,16 @@ local Window = Rayfield:CreateWindow({
     Name = "Моё первое меню",
     LoadingTitle = "Rayfield UI",
     LoadingSubtitle = "by namesick",
-    ToggleUIKeybind = Enum.KeyCode.K, -- Клавиша K для скрытия
+    ToggleUIKeybind = Enum.KeyCode.K,
 })
 
--- 3. Создаём вкладку "Основное"
-local Tab = Window:CreateTab("Основное", 0)
+-- 3. Создаём вкладку
+local Tab = Window:CreateTab("Основное")
 
--- 4. Создаём секцию "Настройки" (ВНЕШНЯЯ)
+-- 4. Создаём секцию
 local Section = Tab:CreateSection("Настройки")
 
--- 5. СОЗДАЁМ КНОПКУ (ОНА БУДЕТ ВНУТРИ СЕКЦИИ)
+-- 5. Кнопка (правильный синтаксис для новой версии)
 Section:CreateButton({
     Name = "Привет!",
     Callback = function()
@@ -23,11 +23,10 @@ Section:CreateButton({
     end
 })
 
--- 6. СОЗДАЁМ ПОЛЗУНОК (СЛАЙДЕР) (ТОЖЕ ВНУТРИ СЕКЦИИ)
+-- 6. Ползунок (правильный синтаксис)
 Section:CreateSlider({
     Name = "Громкость",
-    Min = 0,
-    Max = 100,
+    Range = {0, 100}, -- В новой версии используется Range, а не Min/Max
     Default = 50,
     Color = Color3.fromRGB(255, 255, 255),
     Increment = 1,
@@ -37,4 +36,4 @@ Section:CreateSlider({
     end
 })
 
-print("✅ Меню загружено! Нажми K для открытия/закрытия.")
+print("✅ Меню загружено! Нажми K.")

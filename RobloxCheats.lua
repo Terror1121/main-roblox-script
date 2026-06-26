@@ -1,11 +1,9 @@
--- 1. Подключаем Rayfield (актуальная версия)
-local Rayfield = loadstring(game:HttpGet('local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/refs/heads/main/source.lua'))()'))()
+-- 1. Подключаем Venyx (встроенная библиотека)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/Venyx/v1.1.0/source.lua"))()
 
 -- 2. Создаём окно
-local Window = Rayfield:CreateWindow({
+local Window = Library:CreateWindow({
     Name = "Моё первое меню",
-    LoadingTitle = "Rayfield UI",
-    LoadingSubtitle = "by namesick",
     ToggleUIKeybind = Enum.KeyCode.K,
 })
 
@@ -15,7 +13,7 @@ local Tab = Window:CreateTab("Основное")
 -- 4. Создаём секцию
 local Section = Tab:CreateSection("Настройки")
 
--- 5. Кнопка (правильный синтаксис для новой версии)
+-- 5. Кнопка
 Section:CreateButton({
     Name = "Привет!",
     Callback = function()
@@ -23,14 +21,12 @@ Section:CreateButton({
     end
 })
 
--- 6. Ползунок (правильный синтаксис)
+-- 6. Ползунок
 Section:CreateSlider({
     Name = "Громкость",
-    Range = {0, 100}, -- В новой версии используется Range, а не Min/Max
+    Min = 0,
+    Max = 100,
     Default = 50,
-    Color = Color3.fromRGB(255, 255, 255),
-    Increment = 1,
-    ValueName = "%",
     Callback = function(value)
         print("Громкость установлена на:", value)
     end

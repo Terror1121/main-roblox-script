@@ -1,5 +1,5 @@
 -- 1. Подключаем Venyx
-local Venyx = loadstring(game:HttpGet("https://raw.githubusercontent.com/zxciaz/VenyxUI/main/Reuploaded"))()
+local Venyx = loadstring(game:HttpGet("https://raw.githubusercontent.com/syschk/Stefanuk12/refs/heads/main/w.txt"))()
 
 -- 2. Создаём UI и сразу получаем объект вкладки
 local venyx = Venyx.new("Моё меню")

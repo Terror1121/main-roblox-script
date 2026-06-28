@@ -260,8 +260,7 @@ local TButton = Tab:CreateButton({
 -- ============================================
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    print("Нажата клавиша:", input.KeyCode.Name, "Ожидается:", flyKeybind)
-    if input.KeyCode.Name == flyKeybind then
+    if input.KeyCode.Name == FlyKeybind.CurrentKeybind then
         toggleFly()
         FlyToggle:Set(flying)
     end

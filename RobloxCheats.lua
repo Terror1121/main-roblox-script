@@ -336,7 +336,7 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Тест кнопка",
+    Name = "Те2ст кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

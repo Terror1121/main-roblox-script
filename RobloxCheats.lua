@@ -233,12 +233,13 @@ local FlySpeedSlider = Tab:CreateSlider({
     end,
 })
 
+-- Исправленный кейбинд для полёта
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
     CurrentKeybind = "X",
     Flag = "FlyKeybind",
     Info = "Нажми на поле и нажми клавишу, чтобы назначить её",
-    Callback = function(Keybind)
+    Callback = function(Keybind, KeybindObject)  -- 👈 Добавлен второй аргумент
         flyKeybind = Keybind
         print("✅ Клавиша полета изменена на:", flyKeybind)
     end,
@@ -322,7 +323,7 @@ local NoclipKeybind = Tab:CreateKeybind({
     CurrentKeybind = "V",
     Flag = "NoclipKeybind",
     Info = "Нажми на поле и нажми клавишу, чтобы назначить её",
-    Callback = function(Keybind)
+    Callback = function(Keybind, KeybindObject)
         noclipKeybind = Keybind
         print("✅ Клавиша Noclip изменена на:", noclipKeybind)
     end,

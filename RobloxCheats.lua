@@ -124,6 +124,7 @@ local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
 local flyKeybind = "X"
+local flyCooldown = false  -- 👈 Блокировка повторного нажатия
 
 local function enableFly()
     if flying then return end
@@ -252,6 +253,7 @@ local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 local noclipEnabled = false
 local noclipConnection = nil
 local noclipKeybind = "V"
+local noclipCooldown = false  -- 👈 Блокировка повторного нажатия
 
 local function enableNoclip()
     if noclipEnabled then return end
@@ -330,22 +332,26 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Т1ест кнопка",
+    Name = "1Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
 })
 
 -- ============================================
--- ОБРАБОТЧИКИ КЛАВИШ
+-- ОБРАБОТЧИКИ КЛАВИШ (С БЛОКИРОВКОЙ ПОВТОРОВ)
 -- ============================================
 
 -- Полёт
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == flyKeybind then
+        if flyCooldown then return end  -- 👈 Блокируем повтор
+        flyCooldown = true
         toggleFly()
         FlyToggle:Set(flying)
+        task.wait(0.3)  -- 👈 Задержка 0.3 секунды
+        flyCooldown = false
     end
 end)
 
@@ -353,8 +359,12 @@ end)
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == noclipKeybind then
+        if noclipCooldown then return end  -- 👈 Блокируем повтор
+        noclipCooldown = true
         toggleNoclip()
         NoclipToggle:Set(noclipEnabled)
+        task.wait(0.3)  -- 👈 Задержка 0.3 секунды
+        noclipCooldown = false
     end
 end)
 

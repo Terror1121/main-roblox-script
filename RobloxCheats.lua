@@ -14,13 +14,16 @@ local Window = Rayfield:CreateWindow({
 local Tab = Window:CreateTab("Игрок", "user-round")
 
 -- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ СКОРОСТИ
+-- ПЕРЕМЕННЫЕ
 -- ============================================
-local SectionSpeed = Tab:CreateSection("Настройки скорости")
-
 local player = game.Players.LocalPlayer
 local runService = game:GetService("RunService")
 local userInput = game:GetService("UserInputService")
+
+-- ============================================
+-- СЕКЦИЯ: НАСТРОЙКИ СКОРОСТИ
+-- ============================================
+local SectionSpeed = Tab:CreateSection("Настройки скорости")
 
 local SPEED = 50
 local useKey = true
@@ -120,9 +123,8 @@ local flySpeed = 200
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
-local flyKeybind = "X"  -- Клавиша по умолчанию
+local flyKeybind = "X"
 
--- ФУНКЦИИ ПОЛЁТА
 local function enableFly()
     if flying then return end
     flying = true
@@ -231,9 +233,6 @@ local FlySpeedSlider = Tab:CreateSlider({
     end,
 })
 
--- ============================================
--- КЕЙБИНД (ИСПРАВЛЕН)
--- ============================================
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
     CurrentKeybind = "X",
@@ -242,6 +241,86 @@ local FlyKeybind = Tab:CreateKeybind({
     Callback = function(Keybind)
         flyKeybind = Keybind
         print("✅ Клавиша полета изменена на:", flyKeybind)
+    end,
+})
+
+-- ============================================
+-- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
+-- ============================================
+local SectionNoclip = Tab:CreateSection("Настройки Noclip")
+
+local noclipEnabled = false
+local noclipConnection = nil
+local noclipKeybind = "V"
+
+local function enableNoclip()
+    if noclipEnabled then return end
+    noclipEnabled = true
+    
+    local char = player.Character
+    if not char then return end
+    
+    noclipConnection = runService.RenderStepped:Connect(function()
+        if not char or not char.Parent then return end
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end)
+    print("✅ Noclip ВКЛЮЧЕН")
+end
+
+local function disableNoclip()
+    if not noclipEnabled then return end
+    noclipEnabled = false
+    
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    
+    local char = player.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+    print("❌ Noclip ВЫКЛЮЧЕН")
+end
+
+local function toggleNoclip()
+    if noclipEnabled then
+        disableNoclip()
+    else
+        enableNoclip()
+    end
+end
+
+local NoclipToggle = Tab:CreateToggle({
+    Name = "Активировать Noclip",
+    CurrentValue = false,
+    Flag = "NoclipToggle",
+    Info = "Включает режим прохода сквозь стены\nРаботает через отключение CanCollide у всех частей тела",
+    Callback = function(Value)
+        if Value then
+            enableNoclip()
+        else
+            disableNoclip()
+        end
+    end,
+})
+
+local NoclipKeybind = Tab:CreateKeybind({
+    Name = "Клавиша для Noclip",
+    CurrentKeybind = "V",
+    Flag = "NoclipKeybind",
+    Info = "Нажми на поле и нажми клавишу, чтобы назначить её для включения/выключения Noclip",
+    Callback = function(Keybind)
+        noclipKeybind = Keybind
+        print("✅ Клавиша Noclip изменена на:", noclipKeybind)
     end,
 })
 
@@ -256,13 +335,24 @@ local TButton = Tab:CreateButton({
 })
 
 -- ============================================
--- ОБРАБОТЧИК КЛАВИШИ (С ОТЛАДКОЙ)
+-- ОБРАБОТЧИКИ КЛАВИШ
 -- ============================================
+
+-- Полёт
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode.Name == FlyKeybind.CurrentKeybind then
+    if input.KeyCode.Name == flyKeybind then
         toggleFly()
         FlyToggle:Set(flying)
+    end
+end)
+
+-- Noclip
+userInput.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode.Name == noclipKeybind then
+        toggleNoclip()
+        NoclipToggle:Set(noclipEnabled)
     end
 end)
 
@@ -274,6 +364,11 @@ player.CharacterAdded:Connect(function()
     if flying then
         enableFly()
     end
+    if noclipEnabled then
+        disableNoclip()
+        task.wait(0.1)
+        enableNoclip()
+    end
 end)
 
 -- ============================================
@@ -282,3 +377,4 @@ end)
 print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
 print("🪁 Полет: включи через переключатель или нажми " .. flyKeybind)
+print("🧱 Noclip: включи через переключатель или нажми " .. noclipKeybind)

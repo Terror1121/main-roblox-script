@@ -103,9 +103,9 @@ end
 -- ============================================
 local SpeedSlider = Tab:CreateSlider({
     Name = "Скорость бега",
-    Range = {16, 200},
+    Range = {16, 500},
     Increment = 1,
-    Suffix = "км/ч",
+    Suffix = "",
     CurrentValue = 50,
     Flag = "SpeedValue",
     Info = "Установи скорость бега от 16 до 200\n\nДля активации включи переключатель ниже",
@@ -134,7 +134,7 @@ local SpeedToggle = Tab:CreateToggle({
 local ModeToggle = Tab:CreateToggle({
     Name = "Режим 'Всегда' (отключи, чтобы работало только на Shift)",
     CurrentValue = false,
-    Flag = "AlwaysMode",
+    Flag = "AlwaysModeSpeedHack",
     Info = "Вкл: скорость работает всегда\nВыкл: скорость работает только при зажатом Shift",
     Callback = function(Value)
         useKey = not Value  -- Если включено, useKey = false (работает всегда)

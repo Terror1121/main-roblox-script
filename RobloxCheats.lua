@@ -125,7 +125,6 @@ local bodyVelocity = nil
 local bodyGyro = nil
 local flyKeybind = "X"
 
--- 👇 СНАЧАЛА ФУНКЦИИ ПОЛЁТА
 local function enableFly()
     if flying then return end
     flying = true
@@ -201,12 +200,14 @@ end
 local function toggleFly()
     if flying then
         disableFly()
+        FlyToggle:Set(false)  -- 👈 СИНХРОНИЗАЦИЯ
     else
         enableFly()
+        FlyToggle:Set(true)   -- 👈 СИНХРОНИЗАЦИЯ
     end
 end
 
--- 👇 ТЕПЕРЬ ЭЛЕМЕНТЫ ИНТЕРФЕЙСА
+-- ТОГЛ ДЛЯ ПОЛЁТА
 local FlyToggle = Tab:CreateToggle({
     Name = "Активировать полет",
     CurrentValue = false,
@@ -218,6 +219,8 @@ local FlyToggle = Tab:CreateToggle({
         else
             disableFly()
         end
+        -- 👈 СИНХРОНИЗАЦИЯ В КОЛБЭКЕ
+        FlyToggle:Set(flying)
     end,
 })
 
@@ -255,7 +258,6 @@ local noclipEnabled = false
 local noclipConnection = nil
 local noclipKeybind = "V"
 
--- 👇 СНАЧАЛА ФУНКЦИИ NOCLIP
 local function enableNoclip()
     if noclipEnabled then return end
     noclipEnabled = true
@@ -299,12 +301,14 @@ end
 local function toggleNoclip()
     if noclipEnabled then
         disableNoclip()
+        NoclipToggle:Set(false)  -- 👈 СИНХРОНИЗАЦИЯ
     else
         enableNoclip()
+        NoclipToggle:Set(true)   -- 👈 СИНХРОНИЗАЦИЯ
     end
 end
 
--- 👇 ТЕПЕРЬ ЭЛЕМЕНТЫ ИНТЕРФЕЙСА
+-- ТОГЛ ДЛЯ NOCLIP
 local NoclipToggle = Tab:CreateToggle({
     Name = "Активировать Noclip",
     CurrentValue = false,
@@ -316,6 +320,8 @@ local NoclipToggle = Tab:CreateToggle({
         else
             disableNoclip()
         end
+        -- 👈 СИНХРОНИЗАЦИЯ В КОЛБЭКЕ
+        NoclipToggle:Set(noclipEnabled)
     end,
 })
 
@@ -334,7 +340,7 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Те1ст кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
@@ -349,7 +355,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == flyKeybind then
         toggleFly()
-        FlyToggle:Set(flying)
+        FlyToggle:Set(flying)  -- 👈 СИНХРОНИЗАЦИЯ
     end
 end)
 
@@ -358,7 +364,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == noclipKeybind then
         toggleNoclip()
-        NoclipToggle:Set(noclipEnabled)
+        NoclipToggle:Set(noclipEnabled)  -- 👈 СИНХРОНИЗАЦИЯ
     end
 end)
 
@@ -369,11 +375,13 @@ player.CharacterAdded:Connect(function()
     task.wait(0.5)
     if flying then
         enableFly()
+        FlyToggle:Set(true)  -- 👈 СИНХРОНИЗАЦИЯ
     end
     if noclipEnabled then
         disableNoclip()
         task.wait(0.1)
         enableNoclip()
+        NoclipToggle:Set(true)  -- 👈 СИНХРОНИЗАЦИЯ
     end
 end)
 

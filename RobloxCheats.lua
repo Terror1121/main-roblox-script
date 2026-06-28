@@ -1,7 +1,4 @@
--- 1. Загружаем библиотеку
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-ScriptID = "sid_eo08v93jcdta",
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))() -- 1. Загружаем библиотеку
 
 -- 2. Создаем главное окно
 local Window = Rayfield:CreateWindow({
@@ -44,3 +41,4 @@ local Button = Tab:CreateButton({
         --print("Громкость установлена на:", Value)
     --end
 --})
+ScriptID = "sid_eo08v93jcdta",

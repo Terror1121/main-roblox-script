@@ -11,7 +11,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- 3. Создаем вкладку
-local Tab = Window:CreateTab("Основное", 4483362458)
+local Tab = Window:CreateTab("Игрок", 4483362458)
 
 -- 4. Создаем секцию
 local Section = Tab:CreateSection("Настройки скорости")

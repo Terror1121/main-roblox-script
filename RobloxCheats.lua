@@ -10,7 +10,7 @@ local Window = Rayfield:CreateWindow({
     ToggleUIKeybind = Enum.KeyCode.G,
 })
 
--- 3. Создаем вкладку "Основное"
+-- 3. Создаем вкладку
 local Tab = Window:CreateTab("Игрок", "user-round")
 
 -- ============================================
@@ -18,7 +18,6 @@ local Tab = Window:CreateTab("Игрок", "user-round")
 -- ============================================
 local SectionSpeed = Tab:CreateSection("Настройки скорости")
 
--- ПЕРЕМЕННЫЕ ДЛЯ СПИДХАКА
 local player = game.Players.LocalPlayer
 local runService = game:GetService("RunService")
 local userInput = game:GetService("UserInputService")
@@ -28,7 +27,6 @@ local useKey = true
 local isActive = false
 local heartbeatConnection = nil
 
--- ЛОГИКА СПИДХАКА
 local function applyPhysicsSpeed(char)
     if not char then return end
     local root = char:FindFirstChild("HumanoidRootPart")
@@ -77,7 +75,6 @@ local function toggleSpeed(state)
     end
 end
 
--- ПОЛЗУНОК СКОРОСТИ
 local SpeedSlider = Tab:CreateSlider({
     Name = "Скорость бега",
     Range = {16, 500},
@@ -92,7 +89,6 @@ local SpeedSlider = Tab:CreateSlider({
     end,
 })
 
--- ПЕРЕКЛЮЧАТЕЛЬ СПИДХАКА
 local SpeedToggle = Tab:CreateToggle({
     Name = "Активировать спидхак",
     CurrentValue = false,
@@ -103,7 +99,6 @@ local SpeedToggle = Tab:CreateToggle({
     end,
 })
 
--- РЕЖИМ "ВСЕГДА"
 local ModeToggle = Tab:CreateToggle({
     Name = "Режим 'Всегда' (отключи для Shift)",
     CurrentValue = false,
@@ -120,15 +115,13 @@ local ModeToggle = Tab:CreateToggle({
 -- ============================================
 local SectionFly = Tab:CreateSection("Настройки полёта")
 
--- ПЕРЕМЕННЫЕ ДЛЯ ПОЛЁТА
 local flying = false
 local flySpeed = 200
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
-local flyKeybind = "X"  -- Клавиша по умолчанию
+local flyKeybind = "X"  -- 👈 Клавиша по умолчанию (строка)
 
--- ФУНКЦИИ ПОЛЁТА
 local function enableFly()
     if flying then return end
     flying = true
@@ -154,7 +147,6 @@ local function enableFly()
     
     flyConnection = runService.RenderStepped:Connect(function()
         if not flying or not rootPart or not bodyVelocity then return end
-        
         local camera = workspace.CurrentCamera
         if not camera then return end
         
@@ -180,7 +172,6 @@ local function enableFly()
         bodyVelocity.Velocity = moveDirection
         bodyGyro.CFrame = camera.CFrame
     end)
-    
     print("✅ Полет ВКЛЮЧЕН")
 end
 
@@ -200,7 +191,6 @@ local function disableFly()
     if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
     if bodyGyro then bodyGyro:Destroy(); bodyGyro = nil end
     if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
-    
     print("❌ Полет ВЫКЛЮЧЕН")
 end
 
@@ -212,7 +202,6 @@ local function toggleFly()
     end
 end
 
--- ПЕРЕКЛЮЧАТЕЛЬ ПОЛЁТА
 local FlyToggle = Tab:CreateToggle({
     Name = "Активировать полет",
     CurrentValue = false,
@@ -227,7 +216,6 @@ local FlyToggle = Tab:CreateToggle({
     end,
 })
 
--- ПОЛЗУНОК СКОРОСТИ ПОЛЁТА
 local FlySpeedSlider = Tab:CreateSlider({
     Name = "Скорость полета",
     Range = {50, 500},
@@ -242,34 +230,35 @@ local FlySpeedSlider = Tab:CreateSlider({
     end,
 })
 
--- НАЗНАЧЕНИЕ КЛАВИШИ ДЛЯ ПОЛЁТА (КЕЙБИНД)
+-- ============================================
+-- КЕЙБИНД (ИСПРАВЛЕН)
+-- ============================================
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
-    CurrentKeybind = "X",  -- 👈 Строка, а не Enum
+    CurrentKeybind = "X",
     Flag = "FlyKeybind",
-    Info = "Нажми на поле и нажми клавишу, чтобы назначить её для включения/выключения полёта",
+    Info = "Нажми на поле и нажми клавишу",
     Callback = function(Keybind)
-        flyKeybind = Keybind  -- Keybind — это строка, например "F"
-        print("Клавиша полета изменена на:", Keybind)  -- 👈 Просто печатаем строку
+        if Keybind then
+            flyKeybind = Keybind
+            print("Клавиша полета изменена на:", flyKeybind)
+        end
     end,
 })
 
--- ============================================
--- ТЕСТОВАЯ КНОПКА
--- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Т1ест кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
 })
 
 -- ============================================
--- ОБРАБОТЧИК КЛАВИШИ ДЛЯ ПОЛЁТА (исправлен)
+-- ОБРАБОТЧИК КЛАВИШИ (ИСПРАВЛЕН)
 -- ============================================
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode.Name == flyKeybind then  -- 👈 Сравниваем строки
+    if input.KeyCode.Name == flyKeybind then
         toggleFly()
         FlyToggle:Set(flying)
     end
@@ -286,8 +275,8 @@ player.CharacterAdded:Connect(function()
 end)
 
 -- ============================================
--- ВЫВОД В КОНСОЛЬ (исправлен)
+-- ВЫВОД В КОНСОЛЬ (ИСПРАВЛЕН)
 -- ============================================
 print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
-print("🪁 Полет: включи через переключатель или нажми " .. flyKeybind)  -- 👈 Убрал .Name
+print("🪁 Полет: включи через переключатель или нажми " .. flyKeybind)

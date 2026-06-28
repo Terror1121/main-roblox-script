@@ -10,18 +10,11 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- 3. Создаем вкладку
-local Tab = Window:CreateTab("Основное", 4483362458) -- Второй аргумент — иконка
+local Tab = Window:CreateTab("Основное", 4483362458, ScriptID = "sid_eo08v93jcdta",) -- Второй аргумент — иконка
 
 -- 4. Создаем секцию внутри вкладки
 local Section = Tab:CreateSection("Настройки")
 
--- 5. Добавляем кнопку
---Section:CreateButton({
-    --Name = "Привет!",
-    --Callback = function()
-       -- print("Кнопка нажата!")
-   -- end
---})
 
 local Button = Tab:CreateButton({
    Name = "Привет!",
@@ -31,14 +24,4 @@ local Button = Tab:CreateButton({
    end,
 })
 
--- 6. Добавляем ползунок
---Section:CreateSlider({
-    --Name = "Громкость",
-    --Range = {0, 100},
-   --Increment = 1,
-    --CurrentValue = 50,
-    --Callback = function(Value)
-        --print("Громкость установлена на:", Value)
-    --end
---})
-ScriptID = "sid_eo08v93jcdta",
+

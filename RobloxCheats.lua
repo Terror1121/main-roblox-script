@@ -11,7 +11,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- 3. Создаем вкладку "Основное"
-local Tab = Window:CreateTab("Основное", "user-round")
+local Tab = Window:CreateTab("Игрок", "user-round")
 
 -- ============================================
 -- СЕКЦИЯ: НАСТРОЙКИ СКОРОСТИ

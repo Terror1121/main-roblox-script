@@ -1,38 +1,39 @@
-local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
-local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+-- 1. Подключаем Neverlose UI
+local Neverlose_Main = loadstring(game:HttpGet("https://raw.githubusercontent.com/Mana42138/Neverlose-UI/main/Source.lua"))()
 
-local Window = Library:CreateWindow({
-    Title = 'Моё меню',
-    Center = true,
-    AutoShow = true,
+-- 2. Создаём окно
+local win = Neverlose_Main:Window({
+    Title = "Моё меню",
+    CFG = "Neverlose",
+    Key = Enum.KeyCode.H,  -- Клавиша для открытия (H)
+    External = {
+        KeySystem = false,
+    }
 })
 
-local MainTab = Window:AddTab('Основное')
-local Group = MainTab:AddLeftGroupbox('Настройки')
+-- 3. Вкладка "Основное"
+local MainTab = win:Tab({
+    Name = "Основное",
+    Callback = function() end
+})
 
-Group:AddButton({
-    Name = 'Привет!',
-    Func = function()
-        print('Кнопка нажата!')
+-- 4. КНОПКА
+MainTab:Button({
+    Name = "Привет!",
+    Callback = function()
+        print("Кнопка нажата!") -- Вывод в консоль экзекутора
     end
 })
 
-Group:AddSlider({
-    Name = 'Громкость',
+-- 5. ПОЛЗУНОК (Слайдер)
+MainTab:Slider({
+    Name = "Громкость",
     Min = 0,
     Max = 100,
     Default = 50,
-    Func = function(Value)
-        print('Громкость:', Value)
+    Callback = function(Value)
+        print("Громкость установлена на:", Value)
     end
 })
 
-local UserInputService = game:GetService("UserInputService")
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.K then
-        Library:ToggleUI()
-    end
-end)
-
-print('✅ Меню загружено! Нажми K.')
+print("✅ Меню загружено! Нажми H для открытия/закрытия (или K).")

@@ -32,6 +32,15 @@ local Button = Tab:CreateButton({
    end,
 })
 
+local Button2 = Section:CreateButton({
+   Name = "Привет!",
+   Callback = function()
+ -- The function that takes place when the button is pressed
+            print("2Кнопка нажата!")
+   end,
+})
+
+
 -- 6. Добавляем ползунок
 --Section:CreateSlider({
     --Name = "Громкость",

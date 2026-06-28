@@ -144,11 +144,9 @@ local ModeToggle = Tab:CreateToggle({
 
 local TButton = Tab:CreateButton({
     Name = "Тест кнопка",
-    Callback = function (
-        print("РАБОТАЕТ!!!!!!!!!!!!!!")
-    )
-        
-    end
+    Callback = function ()
+        print("РАБОТАЕТ!!!!!!!!!!!!!!") 
+    end,
 })
 
 print("✅ Меню загружено! Нажми G для открытия.")

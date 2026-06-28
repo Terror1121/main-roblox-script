@@ -120,8 +120,9 @@ local flySpeed = 200
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
-local flyKeybind = "X"  -- 👈 Клавиша по умолчанию (строка)
+local flyKeybind = "X"  -- Клавиша по умолчанию
 
+-- ФУНКЦИИ ПОЛЁТА
 local function enableFly()
     if flying then return end
     flying = true
@@ -237,14 +238,16 @@ local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
     CurrentKeybind = "X",
     Flag = "FlyKeybind",
-    Info = "Нажми на поле и нажми клавишу",
+    Info = "Нажми на поле и нажми клавишу, чтобы назначить её",
     Callback = function(Keybind)
-        -- Keybind — это строка с названием клавиши (например "F")
         flyKeybind = Keybind
-        print("Клавиша полета изменена на:", flyKeybind)
+        print("✅ Клавиша полета изменена на:", flyKeybind)
     end,
 })
 
+-- ============================================
+-- ТЕСТОВАЯ КНОПКА
+-- ============================================
 local TButton = Tab:CreateButton({
     Name = "Тест кнопка",
     Callback = function()
@@ -253,11 +256,11 @@ local TButton = Tab:CreateButton({
 })
 
 -- ============================================
--- ОБРАБОТЧИК КЛАВИШИ (ИСПРАВЛЕН)
+-- ОБРАБОТЧИК КЛАВИШИ (С ОТЛАДКОЙ)
 -- ============================================
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    print("Нажата клавиша:", input.KeyCode.Name, "Ожидается:", flyKeybind)  -- 👈 Отладка
+    print("Нажата клавиша:", input.KeyCode.Name, "Ожидается:", flyKeybind)
     if input.KeyCode.Name == flyKeybind then
         toggleFly()
         FlyToggle:Set(flying)
@@ -275,7 +278,7 @@ player.CharacterAdded:Connect(function()
 end)
 
 -- ============================================
--- ВЫВОД В КОНСОЛЬ (ИСПРАВЛЕН)
+-- ВЫВОД В КОНСОЛЬ
 -- ============================================
 print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")

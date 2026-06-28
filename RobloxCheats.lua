@@ -1,5 +1,5 @@
 -- 1. Подключаем Neverlose (альтернативная ссылка)
-local Neverlose_Main = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kokoro-San/Neverlose-UI/main/Source.lua"))()
+local Neverlose_Main = loadstring(game:HttpGet("https://pastebin.com/raw/HzAeDGm4"))()
 
 -- 2. Создаём окно
 local win = Neverlose_Main:Window({

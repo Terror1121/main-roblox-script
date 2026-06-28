@@ -2,12 +2,12 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))() -- 1
 
 -- 2. Создаем главное окно
 local Window = Rayfield:CreateWindow({
-    Name = "Моё крутое меню",
+    Name = "Main Script",
     LoadingTitle = "Загрузка...",
-    LoadingSubtitle = "by YourName",
+    LoadingSubtitle = "by namesick",
     ScriptID = "sid_eo08v93jcdta",
     -- Клавиша для открытия/закрытия меню
-    ToggleUIKeybind = Enum.KeyCode.K,
+    ToggleUIKeybind = Enum.KeyCode.G,
     
 })
 
@@ -19,7 +19,7 @@ local Section = Tab:CreateSection("Настройки")
 
 
 local Button = Tab:CreateButton({
-   Name = "Привет!",
+   Name = "Кнопка",
    Callback = function()
  -- The function that takes place when the button is pressed
             print("Кнопка нажата!")

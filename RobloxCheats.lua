@@ -239,10 +239,9 @@ local FlyKeybind = Tab:CreateKeybind({
     Flag = "FlyKeybind",
     Info = "Нажми на поле и нажми клавишу",
     Callback = function(Keybind)
-        if Keybind then
-            flyKeybind = Keybind
-            print("Клавиша полета изменена на:", flyKeybind)
-        end
+        -- Keybind — это строка с названием клавиши (например "F")
+        flyKeybind = Keybind
+        print("Клавиша полета изменена на:", flyKeybind)
     end,
 })
 

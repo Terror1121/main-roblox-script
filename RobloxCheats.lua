@@ -1,5 +1,5 @@
 -- 1. Подключаем Neverlose (альтернативная ссылка)
-local Neverlose_Main = loadstring(game:HttpGet("https://pastebin.com/raw/HzAeDGm4"))()
+local Neverlose_Main = loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/Neverlose/main/Source.lua"))()
 
 -- 2. Создаём окно
 local win = Neverlose_Main:Window({

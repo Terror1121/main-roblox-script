@@ -1,6 +1,8 @@
 -- 1. Загружаем библиотеку
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+ScriptID = "sid_eo08v93jcdta",
+
 -- 2. Создаем главное окно
 local Window = Rayfield:CreateWindow({
     Name = "Моё крутое меню",
@@ -31,15 +33,6 @@ local Button = Tab:CreateButton({
             print("Кнопка нажата!")
    end,
 })
-
-local Button2 = Section:CreateButton({
-   Name = "Привет!",
-   Callback = function()
- -- The function that takes place when the button is pressed
-            print("2Кнопка нажата!")
-   end,
-})
-
 
 -- 6. Добавляем ползунок
 --Section:CreateSlider({

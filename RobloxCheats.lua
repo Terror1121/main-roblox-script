@@ -125,47 +125,7 @@ local bodyVelocity = nil
 local bodyGyro = nil
 local flyKeybind = "X"
 
--- Создаём элементы полёта
-local FlyToggle = Tab:CreateToggle({
-    Name = "Активировать полет",
-    CurrentValue = false,
-    Flag = "FlyToggle",
-    Info = "Включает режим полёта\nУправление: WASD - движение, Пробел - вверх, Shift - вниз\nE - ускорение, Q - замедление",
-    Callback = function(Value)
-        if Value then
-            enableFly()
-        else
-            disableFly()
-        end
-    end,
-})
-
-local FlySpeedSlider = Tab:CreateSlider({
-    Name = "Скорость полета",
-    Range = {50, 500},
-    Increment = 10,
-    Suffix = "",
-    CurrentValue = 200,
-    Flag = "FlySpeedSlider",
-    Info = "Установи скорость полёта от 50 до 500",
-    Callback = function(Value)
-        flySpeed = Value
-        print("Скорость полета изменена на:", flySpeed)
-    end,
-})
-
-local FlyKeybind = Tab:CreateKeybind({
-    Name = "Клавиша для полета",
-    CurrentKeybind = "X",
-    Flag = "FlyKeybind",
-    Info = "Нажми на поле и нажми клавишу, чтобы назначить её",
-    Callback = function(Keybind, KeybindObject)
-        flyKeybind = Keybind
-        print("✅ Клавиша полета изменена на:", flyKeybind)
-    end,
-})
-
--- Функции полёта
+-- 👇 СНАЧАЛА ФУНКЦИИ ПОЛЁТА
 local function enableFly()
     if flying then return end
     flying = true
@@ -246,6 +206,46 @@ local function toggleFly()
     end
 end
 
+-- 👇 ТЕПЕРЬ ЭЛЕМЕНТЫ ИНТЕРФЕЙСА
+local FlyToggle = Tab:CreateToggle({
+    Name = "Активировать полет",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Info = "Включает режим полёта\nУправление: WASD - движение, Пробел - вверх, Shift - вниз\nE - ускорение, Q - замедление",
+    Callback = function(Value)
+        if Value then
+            enableFly()
+        else
+            disableFly()
+        end
+    end,
+})
+
+local FlySpeedSlider = Tab:CreateSlider({
+    Name = "Скорость полета",
+    Range = {50, 500},
+    Increment = 10,
+    Suffix = "",
+    CurrentValue = 200,
+    Flag = "FlySpeedSlider",
+    Info = "Установи скорость полёта от 50 до 500",
+    Callback = function(Value)
+        flySpeed = Value
+        print("Скорость полета изменена на:", flySpeed)
+    end,
+})
+
+local FlyKeybind = Tab:CreateKeybind({
+    Name = "Клавиша для полета",
+    CurrentKeybind = "X",
+    Flag = "FlyKeybind",
+    Info = "Нажми на поле и нажми клавишу, чтобы назначить её",
+    Callback = function(Keybind, KeybindObject)
+        flyKeybind = Keybind
+        print("✅ Клавиша полета изменена на:", flyKeybind)
+    end,
+})
+
 -- ============================================
 -- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
 -- ============================================
@@ -255,7 +255,56 @@ local noclipEnabled = false
 local noclipConnection = nil
 local noclipKeybind = "V"
 
--- Создаём элементы Noclip
+-- 👇 СНАЧАЛА ФУНКЦИИ NOCLIP
+local function enableNoclip()
+    if noclipEnabled then return end
+    noclipEnabled = true
+    
+    local char = player.Character
+    if not char then return end
+    
+    noclipConnection = runService.RenderStepped:Connect(function()
+        if not char or not char.Parent then return end
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end)
+    
+    print("✅ Noclip ВКЛЮЧЕН")
+end
+
+local function disableNoclip()
+    if not noclipEnabled then return end
+    noclipEnabled = false
+    
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    
+    local char = player.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+    
+    print("❌ Noclip ВЫКЛЮЧЕН")
+end
+
+local function toggleNoclip()
+    if noclipEnabled then
+        disableNoclip()
+    else
+        enableNoclip()
+    end
+end
+
+-- 👇 ТЕПЕРЬ ЭЛЕМЕНТЫ ИНТЕРФЕЙСА
 local NoclipToggle = Tab:CreateToggle({
     Name = "Активировать Noclip",
     CurrentValue = false,
@@ -281,62 +330,11 @@ local NoclipKeybind = Tab:CreateKeybind({
     end,
 })
 
--- Функции Noclip
-local function enableNoclip()
-    if noclipEnabled then return end
-    noclipEnabled = true
-    
-    local char = player.Character
-    if not char then return end
-    
-    noclipConnection = runService.RenderStepped:Connect(function()
-        if not char or not char.Parent then return end
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end)
-    
-    NoclipToggle:Set(true)
-    print("✅ Noclip ВКЛЮЧЕН")
-end
-
-local function disableNoclip()
-    if not noclipEnabled then return end
-    noclipEnabled = false
-    
-    if noclipConnection then
-        noclipConnection:Disconnect()
-        noclipConnection = nil
-    end
-    
-    local char = player.Character
-    if char then
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
-        end
-    end
-    
-    NoclipToggle:Set(false)
-    print("❌ Noclip ВЫКЛЮЧЕН")
-end
-
-local function toggleNoclip()
-    if noclipEnabled then
-        disableNoclip()
-    else
-        enableNoclip()
-    end
-end
-
 -- ============================================
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Те1ст кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
@@ -355,10 +353,10 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Noclip (используем NoclipKeybind.CurrentKeybind для надёжности)
+-- Noclip
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode.Name == NoclipKeybind.CurrentKeybind then
+    if input.KeyCode.Name == noclipKeybind then
         toggleNoclip()
         NoclipToggle:Set(noclipEnabled)
     end

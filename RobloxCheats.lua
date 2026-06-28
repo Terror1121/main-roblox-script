@@ -1,32 +1,21 @@
--- 1. Подключаем Neverlose (альтернативная ссылка)
-local Neverlose_Main = loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/Neverlose/main/Source.lua"))()
+-- 1. Подключаем Venyx
+local Venyx = loadstring(game:HttpGet("https://raw.githubusercontent.com/Stefanuk12/Venyx-UI-Library/main/source.lua"))()
 
--- 2. Создаём окно
-local win = Neverlose_Main:Window({
-    Title = "Моё меню",
-    CFG = "Neverlose",
-    Key = Enum.KeyCode.H,
-    External = {
-        KeySystem = false,
-    }
-})
+-- 2. Создаём UI и сразу получаем объект вкладки
+local venyx = Venyx.new("Моё меню")
+local mainTab = venyx:AddPage("Основное")
+local settingsSection = mainTab:AddSection("Настройки")
 
--- 3. Вкладка
-local MainTab = win:Tab({
-    Name = "Основное",
-    Callback = function() end
-})
-
--- 4. Кнопка
-MainTab:Button({
+-- 3. Кнопка
+settingsSection:CreateButton({
     Name = "Привет!",
     Callback = function()
         print("Кнопка нажата!")
     end
 })
 
--- 5. Ползунок
-MainTab:Slider({
+-- 4. Ползунок
+settingsSection:CreateSlider({
     Name = "Громкость",
     Min = 0,
     Max = 100,
@@ -36,5 +25,13 @@ MainTab:Slider({
     end
 })
 
+-- 5. Управление клавишей K
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.K then
+        venyx:Toggle()
+    end
+end)
 
-print("✅ Меню загружено! Нажми H или K.")
+print("✅ Меню загружено! Нажми K.")

@@ -126,7 +126,7 @@ local flySpeed = 200
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
-local flyKeybind = Enum.KeyCode.X  -- Клавиша по умолчанию
+local flyKeybind = "X"  -- Клавиша по умолчанию
 
 -- ФУНКЦИИ ПОЛЁТА
 local function enableFly()
@@ -245,12 +245,12 @@ local FlySpeedSlider = Tab:CreateSlider({
 -- НАЗНАЧЕНИЕ КЛАВИШИ ДЛЯ ПОЛЁТА (КЕЙБИНД)
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
-    CurrentKeybind = "X",
+    CurrentKeybind = "X",  -- 👈 Строка, а не Enum
     Flag = "FlyKeybind",
     Info = "Нажми на поле и нажми клавишу, чтобы назначить её для включения/выключения полёта",
-    Callback = function(Key)
-        flyKeybind = Key
-        print("Клавиша полета изменена на:", Key.Name)
+    Callback = function(Keybind)
+        flyKeybind = Keybind  -- Keybind — это строка, например "F"
+        print("Клавиша полета изменена на:", Keybind)  -- 👈 Просто печатаем строку
     end,
 })
 

@@ -268,6 +268,8 @@ local function enableNoclip()
             end
         end
     end)
+    
+    NoclipToggle:Set(true)  -- 👈 Синхронизация
     print("✅ Noclip ВКЛЮЧЕН")
 end
 
@@ -288,6 +290,8 @@ local function disableNoclip()
             end
         end
     end
+    
+    NoclipToggle:Set(false)  -- 👈 Синхронизация
     print("❌ Noclip ВЫКЛЮЧЕН")
 end
 
@@ -303,7 +307,7 @@ local NoclipToggle = Tab:CreateToggle({
     Name = "Активировать Noclip",
     CurrentValue = false,
     Flag = "NoclipToggle",
-    Info = "Включает режим прохода сквозь стены\nРаботает через отключение CanCollide у всех частей тела",
+    Info = "Включает режим прохода сквозь стены",
     Callback = function(Value)
         if Value then
             enableNoclip()
@@ -317,7 +321,7 @@ local NoclipKeybind = Tab:CreateKeybind({
     Name = "Клавиша для Noclip",
     CurrentKeybind = "V",
     Flag = "NoclipKeybind",
-    Info = "Нажми на поле и нажми клавишу, чтобы назначить её для включения/выключения Noclip",
+    Info = "Нажми на поле и нажми клавишу, чтобы назначить её",
     Callback = function(Keybind)
         noclipKeybind = Keybind
         print("✅ Клавиша Noclip изменена на:", noclipKeybind)

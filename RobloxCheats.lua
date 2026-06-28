@@ -1,31 +1,31 @@
--- 1. Подключаем Neverlose UI
-local Neverlose_Main = loadstring(game:HttpGet("https://raw.githubusercontent.com/Mana42138/Neverlose-UI/main/Source.lua"))()
+-- 1. Подключаем Neverlose (альтернативная ссылка)
+local Neverlose_Main = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kokoro-San/Neverlose-UI/main/Source.lua"))()
 
 -- 2. Создаём окно
 local win = Neverlose_Main:Window({
     Title = "Моё меню",
     CFG = "Neverlose",
-    Key = Enum.KeyCode.H,  -- Клавиша для открытия (H)
+    Key = Enum.KeyCode.H,
     External = {
         KeySystem = false,
     }
 })
 
--- 3. Вкладка "Основное"
+-- 3. Вкладка
 local MainTab = win:Tab({
     Name = "Основное",
     Callback = function() end
 })
 
--- 4. КНОПКА
+-- 4. Кнопка
 MainTab:Button({
     Name = "Привет!",
     Callback = function()
-        print("Кнопка нажата!") -- Вывод в консоль экзекутора
+        print("Кнопка нажата!")
     end
 })
 
--- 5. ПОЛЗУНОК (Слайдер)
+-- 5. Ползунок
 MainTab:Slider({
     Name = "Громкость",
     Min = 0,
@@ -36,4 +36,5 @@ MainTab:Slider({
     end
 })
 
-print("✅ Меню загружено! Нажми H для открытия/закрытия (или K).")
+
+print("✅ Меню загружено! Нажми H или K.")

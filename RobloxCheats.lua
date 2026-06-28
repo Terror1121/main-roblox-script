@@ -11,7 +11,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- 3. Создаем вкладку
-local Tab = Window:CreateTab("Игрок", "userRound")
+local Tab = Window:CreateTab("Основное", "user-round")
 
 -- 4. Создаем секцию
 local Section = Tab:CreateSection("Настройки скорости")
@@ -140,6 +140,15 @@ local ModeToggle = Tab:CreateToggle({
         useKey = not Value  -- Если включено, useKey = false (работает всегда)
         print("Режим изменен:", Value and "Всегда" or "Только Shift")
     end,
+})
+
+local TButton = Tab:CreateButton({
+    Name = "Тест кнопка",
+    Callback = function (
+        print("РАБОТАЕТ!!!!!!!!!!!!!!")
+    )
+        
+    end
 })
 
 print("✅ Меню загружено! Нажми G для открытия.")

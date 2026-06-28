@@ -1,37 +1,36 @@
--- 1. Подключаем Venyx
-local Venyx = loadstring(game:HttpGet("https://raw.githubusercontent.com/syschk/Stefanuk12/refs/heads/main/w.txt"))()
+-- 1. Загружаем библиотеку
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 2. Создаём UI и сразу получаем объект вкладки
-local venyx = Venyx.new("Моё меню")
-local mainTab = venyx:AddPage("Основное")
-local settingsSection = mainTab:AddSection("Настройки")
+-- 2. Создаем главное окно
+local Window = Rayfield:CreateWindow({
+    Name = "Моё крутое меню",
+    LoadingTitle = "Загрузка...",
+    LoadingSubtitle = "by YourName",
+    -- Клавиша для открытия/закрытия меню
+    ToggleUIKeybind = Enum.KeyCode.K,
+})
 
--- 3. Кнопка
-settingsSection:CreateButton({
+-- 3. Создаем вкладку
+local Tab = Window:CreateTab("Основное", 4483362458) -- Второй аргумент — иконка
+
+-- 4. Создаем секцию внутри вкладки
+local Section = Tab:CreateSection("Настройки")
+
+-- 5. Добавляем кнопку
+Section:CreateButton({
     Name = "Привет!",
     Callback = function()
         print("Кнопка нажата!")
     end
 })
 
--- 4. Ползунок
-settingsSection:CreateSlider({
+-- 6. Добавляем ползунок
+Section:CreateSlider({
     Name = "Громкость",
-    Min = 0,
-    Max = 100,
-    Default = 50,
+    Range = {0, 100},
+    Increment = 1,
+    CurrentValue = 50,
     Callback = function(Value)
         print("Громкость установлена на:", Value)
     end
 })
-
--- 5. Управление клавишей K
-local UserInputService = game:GetService("UserInputService")
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.K then
-        venyx:Toggle()
-    end
-end)
-
-print("✅ Меню загружено! Нажми K.")

@@ -200,11 +200,11 @@ end
 local function toggleFly()
     if flying then
         disableFly()
-        FlyToggle:Set(false)  -- 👈 СИНХРОНИЗАЦИЯ
     else
         enableFly()
-        FlyToggle:Set(true)   -- 👈 СИНХРОНИЗАЦИЯ
     end
+    -- 👇 СИНХРОНИЗАЦИЯ
+    FlyToggle:Set(flying)
 end
 
 -- ТОГЛ ДЛЯ ПОЛЁТА
@@ -219,8 +219,6 @@ local FlyToggle = Tab:CreateToggle({
         else
             disableFly()
         end
-        -- 👈 СИНХРОНИЗАЦИЯ В КОЛБЭКЕ
-        FlyToggle:Set(flying)
     end,
 })
 
@@ -301,11 +299,11 @@ end
 local function toggleNoclip()
     if noclipEnabled then
         disableNoclip()
-        NoclipToggle:Set(false)  -- 👈 СИНХРОНИЗАЦИЯ
     else
         enableNoclip()
-        NoclipToggle:Set(true)   -- 👈 СИНХРОНИЗАЦИЯ
     end
+    -- 👇 СИНХРОНИЗАЦИЯ
+    NoclipToggle:Set(noclipEnabled)
 end
 
 -- ТОГЛ ДЛЯ NOCLIP
@@ -320,8 +318,6 @@ local NoclipToggle = Tab:CreateToggle({
         else
             disableNoclip()
         end
-        -- 👈 СИНХРОНИЗАЦИЯ В КОЛБЭКЕ
-        NoclipToggle:Set(noclipEnabled)
     end,
 })
 
@@ -355,7 +351,6 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == flyKeybind then
         toggleFly()
-        FlyToggle:Set(flying)  -- 👈 СИНХРОНИЗАЦИЯ
     end
 end)
 
@@ -364,7 +359,6 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == noclipKeybind then
         toggleNoclip()
-        NoclipToggle:Set(noclipEnabled)  -- 👈 СИНХРОНИЗАЦИЯ
     end
 end)
 
@@ -375,17 +369,16 @@ player.CharacterAdded:Connect(function()
     task.wait(0.5)
     if flying then
         enableFly()
-        FlyToggle:Set(true)  -- 👈 СИНХРОНИЗАЦИЯ
+        FlyToggle:Set(true)
     end
     if noclipEnabled then
         disableNoclip()
         task.wait(0.1)
         enableNoclip()
-        NoclipToggle:Set(true)  -- 👈 СИНХРОНИЗАЦИЯ
+        NoclipToggle:Set(true)
     end
 end)
 
---йоооу
 -- ============================================
 -- ВЫВОД В КОНСОЛЬ
 -- ============================================

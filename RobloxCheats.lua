@@ -234,7 +234,7 @@ local FlySpeedSlider = Tab:CreateSlider({
     Increment = 10,
     Suffix = "",
     CurrentValue = 200,
-    Flag = "FlySpeed",
+    Flag = "FlySpeedSlider",
     Info = "Установи скорость полёта от 50 до 500",
     Callback = function(Value)
         flySpeed = Value
@@ -245,7 +245,7 @@ local FlySpeedSlider = Tab:CreateSlider({
 -- НАЗНАЧЕНИЕ КЛАВИШИ ДЛЯ ПОЛЁТА (КЕЙБИНД)
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
-    CurrentKeybind = Enum.KeyCode.X,
+    CurrentKeybind = "X",
     Flag = "FlyKeybind",
     Info = "Нажми на поле и нажми клавишу, чтобы назначить её для включения/выключения полёта",
     Callback = function(Key)

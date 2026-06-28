@@ -353,9 +353,10 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- Noclip
+-- В обработчике используй NoclipKeybind.CurrentKeybind
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode.Name == noclipKeybind then
+    if input.KeyCode.Name == NoclipKeybind.CurrentKeybind then  -- 👈 Читаем из объекта
         toggleNoclip()
         NoclipToggle:Set(noclipEnabled)
     end

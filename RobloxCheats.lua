@@ -265,13 +265,12 @@ local TButton = Tab:CreateButton({
 })
 
 -- ============================================
--- ОБРАБОТЧИК КЛАВИШИ ДЛЯ ПОЛЁТА (работает с биндом)
+-- ОБРАБОТЧИК КЛАВИШИ ДЛЯ ПОЛЁТА (исправлен)
 -- ============================================
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode == flyKeybind then
+    if input.KeyCode.Name == flyKeybind then  -- 👈 Сравниваем строки
         toggleFly()
-        -- Синхронизируем Toggle с состоянием полёта
         FlyToggle:Set(flying)
     end
 end)
@@ -287,8 +286,8 @@ player.CharacterAdded:Connect(function()
 end)
 
 -- ============================================
--- ВЫВОД В КОНСОЛЬ
+-- ВЫВОД В КОНСОЛЬ (исправлен)
 -- ============================================
 print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
-print("🪁 Полет: включи через переключатель или нажми " .. flyKeybind.Name)
+print("🪁 Полет: включи через переключатель или нажми " .. flyKeybind)  -- 👈 Убрал .Name

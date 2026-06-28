@@ -203,11 +203,9 @@ local function toggleFly()
     else
         enableFly()
     end
-    -- 👇 СИНХРОНИЗАЦИЯ
-    FlyToggle:Set(flying)
+    -- НЕ СТАВИМ FlyToggle:Set() ЗДЕСЬ
 end
 
--- ТОГЛ ДЛЯ ПОЛЁТА
 local FlyToggle = Tab:CreateToggle({
     Name = "Активировать полет",
     CurrentValue = false,
@@ -219,6 +217,7 @@ local FlyToggle = Tab:CreateToggle({
         else
             disableFly()
         end
+        FlyToggle:Set(flying)
     end,
 })
 
@@ -302,11 +301,9 @@ local function toggleNoclip()
     else
         enableNoclip()
     end
-    -- 👇 СИНХРОНИЗАЦИЯ
-    NoclipToggle:Set(noclipEnabled)
+    -- НЕ СТАВИМ NoclipToggle:Set() ЗДЕСЬ
 end
 
--- ТОГЛ ДЛЯ NOCLIP
 local NoclipToggle = Tab:CreateToggle({
     Name = "Активировать Noclip",
     CurrentValue = false,
@@ -318,6 +315,7 @@ local NoclipToggle = Tab:CreateToggle({
         else
             disableNoclip()
         end
+        NoclipToggle:Set(noclipEnabled)
     end,
 })
 
@@ -336,7 +334,7 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Те2ст кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
@@ -351,6 +349,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == flyKeybind then
         toggleFly()
+        FlyToggle:Set(flying)
     end
 end)
 
@@ -359,6 +358,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == noclipKeybind then
         toggleNoclip()
+        NoclipToggle:Set(noclipEnabled)
     end
 end)
 

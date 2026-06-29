@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd020",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd021",
 })
 
 -- ============================================
@@ -447,14 +447,10 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС (BoxHandleAdornment - 3D рамка от ног до головы)
-    local box = Instance.new("BoxHandleAdornment")
-    box.Size = Vector3.new(2.5, 5, 2.5)
+    -- БОКС (SelectionBox - работает всегда)
+    local box = Instance.new("SelectionBox")
     box.Color3 = espSettings.boxColor
     box.Transparency = 0.4
-    box.LineThickness = 0.08
-    box.ZIndex = 0
-    box.AlwaysOnTop = true
     box.Adornee = rootPart
     box.Parent = char
     box.Visible = espEnabled and espSettings.showBox
@@ -463,8 +459,8 @@ local function createESP(targetPlayer)
     -- ЗДОРОВЬЕ (BillboardGui)
     local healthBillboard = Instance.new("BillboardGui")
     healthBillboard.Size = UDim2.new(0, 3, 0, 0.3)
-    healthBillboard.Adornee = rootPart
-    healthBillboard.StudsOffset = Vector3.new(0, -2.5, 0)
+    healthBillboard.Adornee = head or rootPart
+    healthBillboard.StudsOffset = Vector3.new(0, (head and 2.5 or 0.5), 0)
     healthBillboard.AlwaysOnTop = true
     healthBillboard.ResetOnSpawn = false
     healthBillboard.Parent = char
@@ -474,7 +470,8 @@ local function createESP(targetPlayer)
     healthBg.Size = UDim2.new(1, 0, 1, 0)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     healthBg.BackgroundTransparency = 0.3
-    healthBg.BorderSizePixel = 0
+    healthBg.BorderSizePixel = 1
+    healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
     healthBg.Parent = healthBillboard
     
     local healthBar = Instance.new("Frame")

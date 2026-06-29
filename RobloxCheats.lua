@@ -123,7 +123,6 @@ local flySpeed = 200
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
-local flyKeybind = "X"
 
 local function enableFly()
     if flying then return end
@@ -203,6 +202,7 @@ local function toggleFly()
     else
         enableFly()
     end
+    FlyToggle:Set(flying)
 end
 
 local FlyToggle = Tab:CreateToggle({
@@ -216,7 +216,6 @@ local FlyToggle = Tab:CreateToggle({
         else
             disableFly()
         end
-        -- ❌ УБИРАЕМ FlyToggle:Set(flying) ОТСЮДА
     end,
 })
 
@@ -234,14 +233,14 @@ local FlySpeedSlider = Tab:CreateSlider({
     end,
 })
 
+-- Кейбинд ДЛЯ ПОЛЁТА (сохраняем в переменную)
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
     CurrentKeybind = "X",
     Flag = "FlyKeybind",
     Info = "Нажми на поле и нажми клавишу, чтобы назначить её",
     Callback = function(Keybind, KeybindObject)
-        flyKeybind = Keybind
-        print("✅ Клавиша полета изменена на:", flyKeybind)
+        print("✅ Клавиша полета изменена на:", Keybind)
     end,
 })
 
@@ -252,7 +251,6 @@ local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
 local noclipEnabled = false
 local noclipConnection = nil
-local noclipKeybind = "V"
 
 local function enableNoclip()
     if noclipEnabled then return end
@@ -300,6 +298,7 @@ local function toggleNoclip()
     else
         enableNoclip()
     end
+    NoclipToggle:Set(noclipEnabled)
 end
 
 local NoclipToggle = Tab:CreateToggle({
@@ -313,18 +312,17 @@ local NoclipToggle = Tab:CreateToggle({
         else
             disableNoclip()
         end
-        -- ❌ УБИРАЕМ NoclipToggle:Set(noclipEnabled) ОТСЮДА
     end,
 })
 
+-- Кейбинд ДЛЯ NOCLIP (сохраняем в переменную)
 local NoclipKeybind = Tab:CreateKeybind({
     Name = "Клавиша для Noclip",
     CurrentKeybind = "V",
     Flag = "NoclipKeybind",
     Info = "Нажми на поле и нажми клавишу, чтобы назначить её",
     Callback = function(Keybind, KeybindObject)
-        noclipKeybind = Keybind
-        print("✅ Клавиша Noclip изменена на:", noclipKeybind)
+        print("✅ Клавиша Noclip изменена на:", Keybind)
     end,
 })
 
@@ -332,22 +330,21 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Т3ест кнопка",
+    Name = "9Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
 })
 
 -- ============================================
--- ОБРАБОТЧИКИ КЛАВИШ
+-- ОБРАБОТЧИКИ КЛАВИШ (ЧИТАЕМ ИЗ ОБЪЕКТА)
 -- ============================================
 
 -- Полёт
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode.Name == flyKeybind then
+    if input.KeyCode.Name == FlyKeybind.CurrentKeybind then
         toggleFly()
-        FlyToggle:Set(flying)
         print("🔑 Клавиша полета нажата, flying:", flying)
     end
 end)
@@ -355,9 +352,8 @@ end)
 -- Noclip
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode.Name == noclipKeybind then
+    if input.KeyCode.Name == NoclipKeybind.CurrentKeybind then
         toggleNoclip()
-        NoclipToggle:Set(noclipEnabled)
         print("🔑 Клавиша Noclip нажата, noclipEnabled:", noclipEnabled)
     end
 end)
@@ -384,5 +380,5 @@ end)
 -- ============================================
 print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
-print("🪁 Полет: включи через переключатель или нажми " .. flyKeybind)
-print("🧱 Noclip: включи через переключатель или нажми " .. noclipKeybind)
+print("🪁 Полет: включи через переключатель или нажми " .. FlyKeybind.CurrentKeybind)
+print("🧱 Noclip: включи через переключатель или нажми " .. NoclipKeybind.CurrentKeybind)

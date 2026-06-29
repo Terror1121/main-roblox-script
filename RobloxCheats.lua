@@ -310,13 +310,20 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ============================================
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
-local TButton = Tab:CreateButton({
+local TButton = TabPr:CreateButton({
     Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
 })
 
+
+local DestroyButton = TabPr:CreateButton({
+    Name = "Уничтожить меню",
+    Callback = function ()
+        Rayfield:Destroy()
+    end,
+})
 -- ============================================
 -- ОБРАБОТЧИКИ КЛАВИШ
 -- ============================================

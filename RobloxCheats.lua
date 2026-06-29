@@ -188,20 +188,6 @@ local function disableFly()
             humanoid.PlatformStand = false
             humanoid.UseJumpPower = true
         end
-        
-        -- Принудительно опускаем персонаж на землю
-        local rootPart = char:FindFirstChild("HumanoidRootPart")
-        if rootPart and humanoid then
-            -- Отключаем гравитацию на мгновение, чтобы персонаж упал
-            humanoid.PlatformStand = true
-            task.wait(0.1)
-            humanoid.PlatformStand = false
-            humanoid.UseJumpPower = true
-            
-            -- Сбрасываем скорость и толкаем вниз
-            rootPart.Velocity = Vector3.new(0, -10, 0)
-            rootPart.RotVelocity = Vector3.new(0, 0, 0)
-        end
     end
     
     if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
@@ -257,7 +243,7 @@ local FlyKeybind = Tab:CreateKeybind({
 })
 
 -- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
+-- СЕКЦИЯ: НАСТРОЙКИ NOCLIP (МАКСИМАЛЬНО ПРОСТОЙ)
 -- ============================================
 local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
@@ -267,53 +253,12 @@ local noclipConnection = nil
 local function enableNoclip()
     if noclipEnabled then return end
     noclipEnabled = true
-    
-    local char = player.Character
-    if not char then return end
-    
-    -- Отключаем столкновения у всех частей тела
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = false
-        end
-    end
-    
     print("✅ Noclip ВКЛЮЧЕН")
 end
 
 local function disableNoclip()
     if not noclipEnabled then return end
     noclipEnabled = false
-    
-    local char = player.Character
-    if char then
-        -- Включаем столкновения обратно
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
-        end
-        
-        -- Если полёт выключен — опускаем персонаж на землю
-        if not flying then
-            local rootPart = char:FindFirstChild("HumanoidRootPart")
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if rootPart and humanoid then
-                -- Отключаем гравитацию на мгновение, чтобы персонаж упал
-                humanoid.PlatformStand = true
-                task.wait(0.1)
-                humanoid.PlatformStand = false
-                humanoid.UseJumpPower = true
-                
-                -- Сбрасываем скорость и толкаем вниз
-                rootPart.Velocity = Vector3.new(0, -10, 0)
-                rootPart.RotVelocity = Vector3.new(0, 0, 0)
-            end
-        else
-            print("ℹ️ Полёт включён, опускание отключено")
-        end
-    end
-    
     print("❌ Noclip ВЫКЛЮЧЕН")
 end
 
@@ -324,6 +269,18 @@ local function toggleNoclip()
         enableNoclip()
     end
 end
+
+-- Обработчик Noclip (просто отключает столкновения)
+runService.RenderStepped:Connect(function()
+    if not noclipEnabled then return end
+    local char = player.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+end)
 
 local NoclipToggle = Tab:CreateToggle({
     Name = "Активировать Noclip",
@@ -353,7 +310,7 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "1Тест кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

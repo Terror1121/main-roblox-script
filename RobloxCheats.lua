@@ -325,10 +325,12 @@ local function enableJump()
         local humanoid = char:FindFirstChildOfClass("Humanoid")
         if not humanoid then return end
         
-        -- Если зажат пробел и персонаж на земле — прыгаем
+        -- Если зажат пробел и персонаж НЕ в воздухе — прыгаем
         if userInput:IsKeyDown(Enum.KeyCode.Space) then
-            if humanoid:GetState() == Enum.HumanoidStateType.Running or 
-               humanoid:GetState() == Enum.HumanoidStateType.Idle then
+            local state = humanoid:GetState()
+            if state == Enum.HumanoidStateType.Running or 
+               state == Enum.HumanoidStateType.Landed or
+               state == Enum.HumanoidStateType.Climbing then
                 humanoid.Jump = true
             end
         end
@@ -367,7 +369,7 @@ local JumpToggle = Tab:CreateToggle({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
-    Name = "1Тест кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

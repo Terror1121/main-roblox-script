@@ -24,7 +24,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 -- Параграф с информацией
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd004",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd005",
 })
 
 -- ============================================
@@ -397,15 +397,16 @@ local function createESP(targetPlayer)
     
     local head = char:FindFirstChild("Head")
     local rootPart = char:FindFirstChild("HumanoidRootPart")
-    if not head or not rootPart then return end
+    local attachPart = head or rootPart
+    if not attachPart then return end
     
     local espData = {}
     
     -- BillboardGui для ника
     local billboard = Instance.new("BillboardGui")
     billboard.Size = UDim2.new(0, 200, 0, 30)
-    billboard.Adornee = head
-    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.Adornee = attachPart
+    billboard.StudsOffset = Vector3.new(0, (head and 2.5 or 0), 0)
     billboard.AlwaysOnTop = true
     billboard.ResetOnSpawn = false
     billboard.Parent = char
@@ -421,19 +422,15 @@ local function createESP(targetPlayer)
     nameLabel.Parent = billboard
     espData.nameLabel = nameLabel
     
-    -- SurfaceGui для бокса
-    local surface = Instance.new("SurfaceGui")
-    surface.Parent = head
-    surface.Face = Enum.NormalId.Front
-    surface.AlwaysOnTop = true
-    surface.Enabled = espEnabled and espSettings.showBox
-    
-    local box = Instance.new("Frame")
-    box.Size = UDim2.new(0, 50, 0, 50)
-    box.BackgroundTransparency = 0.8
-    box.BorderSizePixel = 2
-    box.BorderColor3 = espSettings.color
-    box.Parent = surface
+    -- SelectionBox для бокса
+    local box = Instance.new("SelectionBox")
+    box.Size = Vector3.new(3, 5, 3)
+    box.Color3 = espSettings.color
+    box.Transparency = 0.5
+    box.LineThickness = 0.1
+    box.Adornee = rootPart or attachPart
+    box.Parent = char
+    box.Visible = espEnabled and espSettings.showBox
     espData.box = box
     
     -- Линия-трейсер
@@ -458,8 +455,7 @@ local function createESP(targetPlayer)
     -- Обновление позиции линии
     local connection = runService.RenderStepped:Connect(function()
         if not espEnabled then return end
-        
-        if espSettings.showLine and espData.line then
+        if espSettings.showLine and espData.line and rootPart then
             local rootPos = rootPart.Position
             local screenPos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(rootPos)
             if onScreen then
@@ -468,7 +464,6 @@ local function createESP(targetPlayer)
                 local diffX = screenPos.X - centerX
                 local diffY = screenPos.Y - centerY
                 local distance = math.sqrt(diffX^2 + diffY^2)
-                
                 if distance > 0 then
                     espData.line.Size = UDim2.new(0, distance, 0, 2)
                     espData.line.Position = UDim2.new(0, centerX + diffX / 2, 0, centerY + diffY / 2)
@@ -484,7 +479,6 @@ local function createESP(targetPlayer)
     end)
     
     table.insert(espConnections, connection)
-    
     return espData
 end
 
@@ -496,13 +490,8 @@ local function removeESP(targetPlayer)
             local billboard = espData.nameLabel.Parent
             if billboard then billboard:Destroy() end
         end
-        if espData.box then 
-            local surface = espData.box.Parent
-            if surface then surface:Destroy() end
-        end
-        if espData.line then 
-            espData.line:Destroy() 
-        end
+        if espData.box then espData.box:Destroy() end
+        if espData.line then espData.line:Destroy() end
         espObjects[targetPlayer] = nil
     end
 end
@@ -513,7 +502,6 @@ local function clearAllESP()
         connection:Disconnect()
     end
     espConnections = {}
-    
     for targetPlayer, _ in pairs(espObjects) do
         removeESP(targetPlayer)
     end
@@ -523,7 +511,6 @@ end
 -- Включение/выключение ESP
 local function toggleESP(state)
     espEnabled = state
-    
     if state then
         for _, targetPlayer in ipairs(Players:GetPlayers()) do
             if targetPlayer ~= player then
@@ -543,7 +530,7 @@ local function updateESPColor(color)
             espData.nameLabel.TextColor3 = color
         end
         if espData.box then
-            espData.box.BorderColor3 = color
+            espData.box.Color3 = color
         end
         if espData.line then
             espData.line.BackgroundColor3 = color
@@ -561,10 +548,7 @@ local function updateESPVisibility()
             end
         end
         if espData.box then
-            local surface = espData.box.Parent
-            if surface then
-                surface.Enabled = espEnabled and espSettings.showBox
-            end
+            espData.box.Visible = espEnabled and espSettings.showBox
         end
         if espData.line then
             espData.line.Visible = espEnabled and espSettings.showLine
@@ -613,7 +597,7 @@ local BoxToggle = TabESP:CreateToggle({
     Name = "Показывать бокс",
     CurrentValue = true,
     Flag = "ESPBoxToggle",
-    Info = "Показывает рамку вокруг головы игрока",
+    Info = "Показывает рамку вокруг игрока",
     Callback = function(Value)
         espSettings.showBox = Value
         updateESPVisibility()

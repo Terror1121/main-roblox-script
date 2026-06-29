@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd012",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd013",
 })
 
 -- ============================================
@@ -383,7 +383,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (ПОВЕРХ ВСЕГО, ИСПРАВЛЕННАЯ)
+-- СЕКЦИЯ: ESP (С РАБОЧИМ БОКСОМ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -416,8 +416,8 @@ local function removeESP(targetPlayer)
     if espData then
         if espData.nameLabel then espData.nameLabel:Destroy() end
         if espData.boxFrame then espData.boxFrame:Destroy() end
-        if espData.healthBar then espData.healthBar:Destroy() end
         if espData.healthBg then espData.healthBg:Destroy() end
+        if espData.healthBar then espData.healthBar:Destroy() end
         espObjects[targetPlayer] = nil
     end
 end
@@ -444,6 +444,7 @@ local function createESP(targetPlayer)
     
     local espData = {}
     
+    -- Имя
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0, 200, 0, 30)
     nameLabel.BackgroundTransparency = 1
@@ -456,8 +457,9 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
+    -- Бокс (обычный Frame с рамкой)
     local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(0, 50, 0, 80)
+    boxFrame.Size = UDim2.new(0, 80, 0, 120)
     boxFrame.BackgroundTransparency = 1
     boxFrame.BorderSizePixel = 3
     boxFrame.BorderColor3 = espSettings.boxColor
@@ -465,6 +467,7 @@ local function createESP(targetPlayer)
     boxFrame.Parent = espGui
     espData.boxFrame = boxFrame
     
+    -- Здоровье (фон + полоска)
     local healthBg = Instance.new("Frame")
     healthBg.Size = UDim2.new(0, 80, 0, 8)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -509,7 +512,7 @@ local function createESP(targetPlayer)
         if not camera then return end
         
         local rootPos, rootOnScreen = camera:WorldToScreenPoint(rootPart.Position)
-        local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2.5, 0))
+        local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2, 0))
         
         if not rootOnScreen then
             nameLabel.Visible = false
@@ -519,21 +522,21 @@ local function createESP(targetPlayer)
         end
         
         local playerHeight = math.abs(rootPos.Y - headPos.Y)
-        local playerWidth = playerHeight * 0.45
-        local boxSize = math.max(playerWidth, 40)
-        local boxHeight = math.max(playerHeight, 60)
+        local playerWidth = playerHeight * 0.4
+        local boxSize = math.max(playerWidth, 50)
+        local boxHeight = math.max(playerHeight, 70)
         
-        -- ИМЯ (на 20 пикселей выше головы)
+        -- ИМЯ (над головой)
         if espSettings.showName then
             nameLabel.Visible = true
-            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 35)
+            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 30)
             nameLabel.TextColor3 = espSettings.nameColor
             nameLabel.TextSize = espSettings.nameSize
         else
             nameLabel.Visible = false
         end
         
-        -- БОКС (от головы до ног)
+        -- БОКС (от головы до ног) - теперь точно виден
         if espSettings.showBox then
             boxFrame.Visible = true
             boxFrame.Size = UDim2.new(0, boxSize, 0, boxHeight)

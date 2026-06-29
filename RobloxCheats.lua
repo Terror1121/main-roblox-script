@@ -202,7 +202,7 @@ local function toggleFly()
     else
         enableFly()
     end
-    FlyToggle:Set(flying)
+    -- ❌ УБИРАЕМ FlyToggle:Set(flying) ОТСЮДА
 end
 
 local FlyToggle = Tab:CreateToggle({
@@ -216,6 +216,7 @@ local FlyToggle = Tab:CreateToggle({
         else
             disableFly()
         end
+        -- ❌ УБИРАЕМ FlyToggle:Set(flying) ОТСЮДА
     end,
 })
 
@@ -233,7 +234,6 @@ local FlySpeedSlider = Tab:CreateSlider({
     end,
 })
 
--- Кейбинд ДЛЯ ПОЛЁТА (сохраняем в переменную)
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
     CurrentKeybind = "X",
@@ -298,7 +298,7 @@ local function toggleNoclip()
     else
         enableNoclip()
     end
-    NoclipToggle:Set(noclipEnabled)
+    -- ❌ УБИРАЕМ NoclipToggle:Set(noclipEnabled) ОТСЮДА
 end
 
 local NoclipToggle = Tab:CreateToggle({
@@ -312,10 +312,10 @@ local NoclipToggle = Tab:CreateToggle({
         else
             disableNoclip()
         end
+        -- ❌ УБИРАЕМ NoclipToggle:Set(noclipEnabled) ОТСЮДА
     end,
 })
 
--- Кейбинд ДЛЯ NOCLIP (сохраняем в переменную)
 local NoclipKeybind = Tab:CreateKeybind({
     Name = "Клавиша для Noclip",
     CurrentKeybind = "V",
@@ -330,14 +330,14 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "9Тест кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
 })
 
 -- ============================================
--- ОБРАБОТЧИКИ КЛАВИШ (ЧИТАЕМ ИЗ ОБЪЕКТА)
+-- ОБРАБОТЧИКИ КЛАВИШ
 -- ============================================
 
 -- Полёт
@@ -345,6 +345,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == FlyKeybind.CurrentKeybind then
         toggleFly()
+        FlyToggle:Set(flying)  -- 👈 СИНХРОНИЗАЦИЯ ЗДЕСЬ
         print("🔑 Клавиша полета нажата, flying:", flying)
     end
 end)
@@ -354,6 +355,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == NoclipKeybind.CurrentKeybind then
         toggleNoclip()
+        NoclipToggle:Set(noclipEnabled)  -- 👈 СИНХРОНИЗАЦИЯ ЗДЕСЬ
         print("🔑 Клавиша Noclip нажата, noclipEnabled:", noclipEnabled)
     end
 end)

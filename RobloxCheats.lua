@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd019",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd020",
 })
 
 -- ============================================
@@ -373,12 +373,11 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (РАБОЧАЯ ВЕРСИЯ)
+-- СЕКЦИЯ: ESP (БЕЗОПАСНАЯ ВЕРСИЯ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
 local espObjects = {}
-local espGui = nil
 
 local espSettings = {
     showName = true,
@@ -391,27 +390,18 @@ local espSettings = {
     healthSize = 3,
 }
 
-local function createESPGui()
-    if espGui then return end
-    espGui = Instance.new("ScreenGui")
-    espGui.Name = "ESPGui"
-    espGui.Parent = player.PlayerGui
-    espGui.ResetOnSpawn = false
-    espGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    espGui.DisplayOrder = 999
-end
-
+-- УДАЛЕНИЕ ESP ДЛЯ ИГРОКА
 local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
-        if espData.nameLabel then espData.nameLabel:Destroy() end
+        if espData.nameBillboard then espData.nameBillboard:Destroy() end
         if espData.box then espData.box:Destroy() end
-        if espData.healthBg then espData.healthBg:Destroy() end
-        if espData.healthBar then espData.healthBar:Destroy() end
+        if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
     end
 end
 
+-- ОЧИСТКА ВСЕХ ESP
 local function clearAllESP()
     for _, connection in ipairs(espConnections) do
         connection:Disconnect()
@@ -421,27 +411,29 @@ local function clearAllESP()
         removeESP(targetPlayer)
     end
     espObjects = {}
-    if espGui then
-        espGui:Destroy()
-        espGui = nil
-    end
 end
 
+-- СОЗДАНИЕ ESP ДЛЯ ИГРОКА
 local function createESP(targetPlayer)
     if targetPlayer == player then return end
     
-    createESPGui()
+    local char = targetPlayer.Character
+    if not char then return end
+    
+    local head = char:FindFirstChild("Head")
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
     
     local espData = {}
     
-    -- ИМЯ (BillboardGui над головой)
+    -- ИМЯ (BillboardGui)
     local nameBillboard = Instance.new("BillboardGui")
     nameBillboard.Size = UDim2.new(0, 200, 0, 30)
-    nameBillboard.Adornee = targetPlayer.Character:FindFirstChild("Head") or targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    nameBillboard.StudsOffset = Vector3.new(0, 3.5, 0)
+    nameBillboard.Adornee = head or rootPart
+    nameBillboard.StudsOffset = Vector3.new(0, (head and 3.5 or 1.5), 0)
     nameBillboard.AlwaysOnTop = true
     nameBillboard.ResetOnSpawn = false
-    nameBillboard.Parent = targetPlayer.Character
+    nameBillboard.Parent = char
     nameBillboard.Enabled = espEnabled and espSettings.showName
     
     local nameLabel = Instance.new("TextLabel")
@@ -455,32 +447,34 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС (SelectionBox - 3D рамка)
-    local box = Instance.new("SelectionBox")
+    -- БОКС (BoxHandleAdornment - 3D рамка от ног до головы)
+    local box = Instance.new("BoxHandleAdornment")
+    box.Size = Vector3.new(2.5, 5, 2.5)
     box.Color3 = espSettings.boxColor
-    box.Transparency = 0.5
-    box.LineThickness = 0.15
-    box.Adornee = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    box.Parent = targetPlayer.Character
+    box.Transparency = 0.4
+    box.LineThickness = 0.08
+    box.ZIndex = 0
+    box.AlwaysOnTop = true
+    box.Adornee = rootPart
+    box.Parent = char
     box.Visible = espEnabled and espSettings.showBox
     espData.box = box
     
-    -- ЗДОРОВЬЕ (BillboardGui под ником, над головой)
+    -- ЗДОРОВЬЕ (BillboardGui)
     local healthBillboard = Instance.new("BillboardGui")
     healthBillboard.Size = UDim2.new(0, 3, 0, 0.3)
-    healthBillboard.Adornee = targetPlayer.Character:FindFirstChild("Head") or targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    healthBillboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    healthBillboard.Adornee = rootPart
+    healthBillboard.StudsOffset = Vector3.new(0, -2.5, 0)
     healthBillboard.AlwaysOnTop = true
     healthBillboard.ResetOnSpawn = false
-    healthBillboard.Parent = targetPlayer.Character
+    healthBillboard.Parent = char
     healthBillboard.Enabled = espEnabled and espSettings.showHealth
     
     local healthBg = Instance.new("Frame")
     healthBg.Size = UDim2.new(1, 0, 1, 0)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    healthBg.BackgroundTransparency = 0.4
-    healthBg.BorderSizePixel = 1
-    healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    healthBg.BackgroundTransparency = 0.3
+    healthBg.BorderSizePixel = 0
     healthBg.Parent = healthBillboard
     
     local healthBar = Instance.new("Frame")
@@ -494,8 +488,8 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
-    -- ОБНОВЛЕНИЕ ЗДОРОВЬЯ И РАЗМЕРА
-    local humanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+    -- ОБНОВЛЕНИЕ ЗДОРОВЬЯ
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
     if humanoid then
         local healthConnection = runService.RenderStepped:Connect(function()
             if not espEnabled or not espSettings.showHealth then
@@ -518,6 +512,7 @@ local function createESP(targetPlayer)
     return espData
 end
 
+-- ОБНОВЛЕНИЕ ВСЕХ ESP
 local function refreshAllESP()
     clearAllESP()
     if espEnabled then
@@ -529,6 +524,7 @@ local function refreshAllESP()
     end
 end
 
+-- ВКЛЮЧЕНИЕ/ВЫКЛЮЧЕНИЕ ESP
 local function toggleESP(state)
     espEnabled = state
     if state then
@@ -538,6 +534,7 @@ local function toggleESP(state)
     end
 end
 
+-- ОБНОВЛЕНИЕ НАСТРОЕК
 local function updateESPSettings()
     for _, espData in pairs(espObjects) do
         if espData.nameLabel then

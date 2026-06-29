@@ -307,7 +307,7 @@ local NoclipKeybind = Tab:CreateKeybind({
 })
 
 -- ============================================
--- СЕКЦИЯ: БЕСКОНЕЧНЫЙ ПРЫЖОК (ИСПРАВЛЕН)
+-- СЕКЦИЯ: БЕСКОНЕЧНЫЙ ПРЫЖОК (БЕЗ Idle)
 -- ============================================
 local SectionJump = Tab:CreateSection("Бесконечный прыжок")
 
@@ -369,7 +369,7 @@ local JumpToggle = Tab:CreateToggle({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
-    Name = "Тест кнопка",
+    Name = "2Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

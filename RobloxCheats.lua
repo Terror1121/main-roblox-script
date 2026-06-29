@@ -307,7 +307,7 @@ local NoclipKeybind = Tab:CreateKeybind({
 })
 
 -- ============================================
--- СЕКЦИЯ: БЕСКОНЕЧНЫЙ ПРЫЖОК (ИСПРАВЛЕН)
+-- СЕКЦИЯ: БЕСКОНЕЧНЫЙ ПРЫЖОК (УПРОЩЁННЫЙ)
 -- ============================================
 local SectionJump = Tab:CreateSection("Бесконечный прыжок")
 
@@ -328,9 +328,9 @@ local function enableJump()
         -- Если зажат пробел и персонаж НЕ в воздухе — прыгаем
         if userInput:IsKeyDown(Enum.KeyCode.Space) then
             local state = humanoid:GetState()
-            if state == Enum.HumanoidStateType.Running or 
-               state == Enum.HumanoidStateType.Landed or
-               state == Enum.HumanoidStateType.GettingUp then
+            -- Проверяем, что персонаж НЕ в воздухе (не Freefall и не Jumping)
+            if state ~= Enum.HumanoidStateType.Freefall and 
+               state ~= Enum.HumanoidStateType.Jumping then
                 humanoid.Jump = true
             end
         end
@@ -369,7 +369,7 @@ local JumpToggle = Tab:CreateToggle({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
-    Name = "Тест кнопка",
+    Name = "Тест кнопка1",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

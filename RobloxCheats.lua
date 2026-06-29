@@ -523,7 +523,7 @@ local function toggleESP(state)
     end
 end
 
--- Обновление цвета всех ESP
+-- Обновление цвета всех ESP (ИСПРАВЛЕНО)
 local function updateESPColor(color)
     espSettings.color = color
     for _, espData in pairs(espObjects) do
@@ -539,21 +539,26 @@ local function updateESPColor(color)
     end
 end
 
--- Обновление видимости элементов
+-- Обновление видимости элементов (ИСПРАВЛЕНО)
 local function updateESPVisibility()
     for _, espData in pairs(espObjects) do
+        -- Обновляем имя
         if espData.nameLabel then
             local billboard = espData.nameLabel.Parent
             if billboard then
                 billboard.Enabled = espEnabled and espSettings.showName
             end
         end
+        
+        -- Обновляем бокс
         if espData.box then
             local surface = espData.box.Parent
             if surface then
                 surface.Enabled = espEnabled and espSettings.showBox
             end
         end
+        
+        -- Обновляем линию
         if espData.line then
             espData.line.Visible = espEnabled and espSettings.showLine
         end

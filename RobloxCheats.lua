@@ -1,5 +1,7 @@
+-- 1. Загружаем библиотеку
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- 2. Создаем главное окно
 local Window = Rayfield:CreateWindow({
     Name = "Main Script",
     LoadingTitle = "Загрузка...",
@@ -8,23 +10,33 @@ local Window = Rayfield:CreateWindow({
     ToggleUIKeybind = Enum.KeyCode.G,
 })
 
+-- 3. Создаем вкладки
 local TabInf = Window:CreateTab("Информация", "info")
 local Tab = Window:CreateTab("Игрок", "user-round")
 local TabESP = Window:CreateTab("ESP", "scan-eye")
 local TabPr = Window:CreateTab("Прочее", "wrench")
 
+-- ============================================
+-- СЕКЦИЯ: ИНФОРМАЦИЯ
+-- ============================================
 local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd007",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd008",
 })
 
+-- ============================================
+-- ПЕРЕМЕННЫЕ
+-- ============================================
 local player = game.Players.LocalPlayer
 local runService = game:GetService("RunService")
 local userInput = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
+-- ============================================
+-- СЕКЦИЯ: НАСТРОЙКИ СКОРОСТИ
+-- ============================================
 local SectionSpeed = Tab:CreateSection("Настройки скорости")
 
 local SPEED = 50
@@ -80,6 +92,7 @@ local function toggleSpeed(state)
     end
 end
 
+-- ПОЛЗУНОК СКОРОСТИ
 local SpeedSlider = Tab:CreateSlider({
     Name = "Скорость бега",
     Range = {16, 500},
@@ -94,6 +107,7 @@ local SpeedSlider = Tab:CreateSlider({
     end,
 })
 
+-- ПЕРЕКЛЮЧАТЕЛЬ СПИДХАКА
 local SpeedToggle = Tab:CreateToggle({
     Name = "Активировать спидхак",
     CurrentValue = false,
@@ -104,6 +118,7 @@ local SpeedToggle = Tab:CreateToggle({
     end,
 })
 
+-- РЕЖИМ "ВСЕГДА"
 local ModeToggle = Tab:CreateToggle({
     Name = "Режим 'Всегда' (отключи для Shift)",
     CurrentValue = false,
@@ -115,6 +130,9 @@ local ModeToggle = Tab:CreateToggle({
     end,
 })
 
+-- ============================================
+-- СЕКЦИЯ: НАСТРОЙКИ ПОЛЁТА
+-- ============================================
 local SectionFly = Tab:CreateSection("Настройки полёта")
 
 local flying = false
@@ -203,6 +221,7 @@ local function toggleFly()
     end
 end
 
+-- ТОГЛ ДЛЯ ПОЛЁТА
 local FlyToggle = Tab:CreateToggle({
     Name = "Активировать полет",
     CurrentValue = false,
@@ -217,6 +236,7 @@ local FlyToggle = Tab:CreateToggle({
     end,
 })
 
+-- ПОЛЗУНОК СКОРОСТИ ПОЛЁТА
 local FlySpeedSlider = Tab:CreateSlider({
     Name = "Скорость полета",
     Range = {50, 500},
@@ -231,6 +251,7 @@ local FlySpeedSlider = Tab:CreateSlider({
     end,
 })
 
+-- КЕЙБИНД ДЛЯ ПОЛЁТА
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
     CurrentKeybind = "X",
@@ -241,6 +262,9 @@ local FlyKeybind = Tab:CreateKeybind({
     end,
 })
 
+-- ============================================
+-- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
+-- ============================================
 local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
 local noclipEnabled = false
@@ -266,6 +290,7 @@ local function toggleNoclip()
     end
 end
 
+-- ОБРАБОТЧИК NOCLIP
 runService.RenderStepped:Connect(function()
     if not noclipEnabled then return end
     local char = player.Character
@@ -277,6 +302,7 @@ runService.RenderStepped:Connect(function()
     end
 end)
 
+-- ТОГЛ ДЛЯ NOCLIP
 local NoclipToggle = Tab:CreateToggle({
     Name = "Активировать Noclip",
     CurrentValue = false,
@@ -291,6 +317,7 @@ local NoclipToggle = Tab:CreateToggle({
     end,
 })
 
+-- КЕЙБИНД ДЛЯ NOCLIP
 local NoclipKeybind = Tab:CreateKeybind({
     Name = "Клавиша для Noclip",
     CurrentKeybind = "V",
@@ -301,6 +328,9 @@ local NoclipKeybind = Tab:CreateKeybind({
     end,
 })
 
+-- ============================================
+-- СЕКЦИЯ: БЕСКОНЕЧНЫЙ ПРЫЖОК
+-- ============================================
 local SectionJump = Tab:CreateSection("Бесконечный прыжок")
 
 local jumpEnabled = false
@@ -337,6 +367,7 @@ local function disableJump()
     print("❌ Бесконечный прыжок ВЫКЛЮЧЕН")
 end
 
+-- ТОГЛ ДЛЯ БЕСКОНЕЧНОГО ПРЫЖКА
 local JumpToggle = Tab:CreateToggle({
     Name = "Активировать бесконечный прыжок",
     CurrentValue = false,
@@ -351,11 +382,15 @@ local JumpToggle = Tab:CreateToggle({
     end,
 })
 
+-- ============================================
+-- СЕКЦИЯ: ESP
+-- ============================================
 local espEnabled = false
 local espConnections = {}
 local espObjects = {}
 local espGui = nil
 
+-- НАСТРОЙКИ ESP ПО УМОЛЧАНИЮ
 local espSettings = {
     showName = true,
     showBox = true,
@@ -363,6 +398,37 @@ local espSettings = {
     color = Color3.fromRGB(255, 0, 0),
 }
 
+-- УДАЛЕНИЕ ESP ДЛЯ ИГРОКА
+local function removeESP(targetPlayer)
+    local espData = espObjects[targetPlayer]
+    if espData then
+        if espData.nameLabel then 
+            local billboard = espData.nameLabel.Parent
+            if billboard then billboard:Destroy() end
+        end
+        if espData.box then espData.box:Destroy() end
+        if espData.line then espData.line:Destroy() end
+        espObjects[targetPlayer] = nil
+    end
+end
+
+-- ОЧИСТКА ВСЕХ ESP
+local function clearAllESP()
+    for _, connection in ipairs(espConnections) do
+        connection:Disconnect()
+    end
+    espConnections = {}
+    for targetPlayer, _ in pairs(espObjects) do
+        removeESP(targetPlayer)
+    end
+    espObjects = {}
+    if espGui then
+        espGui:Destroy()
+        espGui = nil
+    end
+end
+
+-- СОЗДАНИЕ ESP ДЛЯ ИГРОКА
 local function createESP(targetPlayer)
     if targetPlayer == player then return end
     
@@ -376,6 +442,7 @@ local function createESP(targetPlayer)
     
     local espData = {}
     
+    -- BillboardGui для ника
     local billboard = Instance.new("BillboardGui")
     billboard.Size = UDim2.new(0, 200, 0, 30)
     billboard.Adornee = attachPart
@@ -395,6 +462,7 @@ local function createESP(targetPlayer)
     nameLabel.Parent = billboard
     espData.nameLabel = nameLabel
     
+    -- SelectionBox для бокса
     local box = Instance.new("SelectionBox")
     box.Color3 = espSettings.color
     box.Transparency = 0.5
@@ -404,6 +472,7 @@ local function createESP(targetPlayer)
     box.Visible = espEnabled and espSettings.showBox
     espData.box = box
     
+    -- Линия-трейсер
     if not espGui then
         espGui = Instance.new("ScreenGui")
         espGui.Name = "ESPGui"
@@ -421,6 +490,7 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
+    -- Обновление позиции линии
     local connection = runService.RenderStepped:Connect(function()
         if not espEnabled then return end
         if espSettings.showLine and espData.line and rootPart then
@@ -451,19 +521,7 @@ local function createESP(targetPlayer)
     return espData
 end
 
-local function removeESP(targetPlayer)
-    local espData = espObjects[targetPlayer]
-    if espData then
-        if espData.nameLabel then 
-            local billboard = espData.nameLabel.Parent
-            if billboard then billboard:Destroy() end
-        end
-        if espData.box then espData.box:Destroy() end
-        if espData.line then espData.line:Destroy() end
-        espObjects[targetPlayer] = nil
-    end
-end
-
+-- ОБНОВЛЕНИЕ ВСЕХ ESP
 local function refreshAllESP()
     clearAllESP()
     if espEnabled then
@@ -475,21 +533,7 @@ local function refreshAllESP()
     end
 end
 
-local function clearAllESP()
-    for _, connection in ipairs(espConnections) do
-        connection:Disconnect()
-    end
-    espConnections = {}
-    for targetPlayer, _ in pairs(espObjects) do
-        removeESP(targetPlayer)
-    end
-    espObjects = {}
-    if espGui then
-        espGui:Destroy()
-        espGui = nil
-    end
-end
-
+-- ВКЛЮЧЕНИЕ/ВЫКЛЮЧЕНИЕ ESP
 local function toggleESP(state)
     espEnabled = state
     if state then
@@ -499,6 +543,7 @@ local function toggleESP(state)
     end
 end
 
+-- ОБНОВЛЕНИЕ ЦВЕТА
 local function updateESPColor(color)
     espSettings.color = color
     for _, espData in pairs(espObjects) do
@@ -514,6 +559,7 @@ local function updateESPColor(color)
     end
 end
 
+-- ОБНОВЛЕНИЕ ВИДИМОСТИ
 local function updateESPVisibility()
     for _, espData in pairs(espObjects) do
         if espData.nameLabel then
@@ -531,8 +577,13 @@ local function updateESPVisibility()
     end
 end
 
+-- ============================================
+-- ИНТЕРФЕЙС ESP В МЕНЮ
+-- ============================================
+
 local SectionESP = TabESP:CreateSection("Настройки ESP")
 
+-- ВКЛЮЧИТЬ ESP
 local ESPToggle = TabESP:CreateToggle({
     Name = "Включить ESP",
     CurrentValue = false,
@@ -543,6 +594,7 @@ local ESPToggle = TabESP:CreateToggle({
     end,
 })
 
+-- ЦВЕТ ESP
 local ESPColorPicker = TabESP:CreateColorPicker({
     Name = "Цвет ESP",
     Color = Color3.fromRGB(255, 0, 0),
@@ -553,6 +605,7 @@ local ESPColorPicker = TabESP:CreateColorPicker({
     end,
 })
 
+-- ПОКАЗЫВАТЬ ИМЕНА
 local NameToggle = TabESP:CreateToggle({
     Name = "Показывать имена",
     CurrentValue = true,
@@ -564,6 +617,7 @@ local NameToggle = TabESP:CreateToggle({
     end,
 })
 
+-- ПОКАЗЫВАТЬ БОКС
 local BoxToggle = TabESP:CreateToggle({
     Name = "Показывать бокс",
     CurrentValue = true,
@@ -575,6 +629,7 @@ local BoxToggle = TabESP:CreateToggle({
     end,
 })
 
+-- ПОКАЗЫВАТЬ ЛИНИИ
 local LineToggle = TabESP:CreateToggle({
     Name = "Показывать линии",
     CurrentValue = true,
@@ -586,6 +641,7 @@ local LineToggle = TabESP:CreateToggle({
     end,
 })
 
+-- ОБРАБОТЧИКИ ПОЯВЛЕНИЯ/УХОДА ИГРОКОВ
 Players.PlayerAdded:Connect(function(targetPlayer)
     if espEnabled then
         createESP(targetPlayer)
@@ -603,6 +659,9 @@ player.CharacterAdded:Connect(function()
     end
 end)
 
+-- ============================================
+-- ТЕСТОВАЯ КНОПКА
+-- ============================================
 local TButton = TabPr:CreateButton({
     Name = "Тестовая кнопка",
     Callback = function()
@@ -617,6 +676,11 @@ local DestroyButton = TabPr:CreateButton({
     end,
 })
 
+-- ============================================
+-- ОБРАБОТЧИКИ КЛАВИШ
+-- ============================================
+
+-- Полёт
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == FlyKeybind.CurrentKeybind then
@@ -626,6 +690,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
+-- Noclip
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == NoclipKeybind.CurrentKeybind then
@@ -635,6 +700,9 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
+-- ============================================
+-- ВОССТАНОВЛЕНИЕ ПРИ РЕСПАВНЕ
+-- ============================================
 player.CharacterAdded:Connect(function()
     task.wait(0.5)
     if flying then
@@ -655,6 +723,9 @@ player.CharacterAdded:Connect(function()
     end
 end)
 
+-- ============================================
+-- ВЫВОД В КОНСОЛЬ
+-- ============================================
 print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
 print("🪁 Полет: включи через переключатель или нажми " .. FlyKeybind.CurrentKeybind)

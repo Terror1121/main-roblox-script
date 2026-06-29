@@ -364,7 +364,7 @@ local JumpToggle = Tab:CreateToggle({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
-    Name = "Тест кнопка",
+    Name = "Тестовая кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

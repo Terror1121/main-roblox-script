@@ -17,16 +17,21 @@ local TabESP = Window:CreateTab("ESP", "scan-eye")
 local TabPr = Window:CreateTab("Прочее", "wrench")
 
 -- ============================================
--- СЕКЦИЯ: ИНФОРМАЦИЯ
+-- СЕКЦИЯ: ИНФОРМАЦИЯ (ИСПРАВЛЕНО)
 -- ============================================
 local SectionInfo = TabInf:CreateSection("О чите")
 
+local InfoFrame = Instance.new("Frame")
+InfoFrame.Parent = TabInf
+InfoFrame.Size = UDim2.new(1, -20, 0, 80)
+InfoFrame.Position = UDim2.new(0, 10, 0, 60)
+InfoFrame.BackgroundTransparency = 1
+
 local InfoLabel = Instance.new("TextLabel")
-InfoLabel.Parent = TabInf
-InfoLabel.Size = UDim2.new(1, -20, 0, 80)
-InfoLabel.Position = UDim2.new(0, 10, 0, 60)
+InfoLabel.Parent = InfoFrame
+InfoLabel.Size = UDim2.new(1, 0, 1, 0)
 InfoLabel.BackgroundTransparency = 1
-InfoLabel.Text = "Сделано разработчиком namesick\nВерсия alfa-001-upd001"
+InfoLabel.Text = "Сделано разработчиком namesick\nВерсия alfa-001-upd002"
 InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfoLabel.TextSize = 18
 InfoLabel.Font = Enum.Font.GothamBold

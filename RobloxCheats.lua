@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd013",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd014",
 })
 
 -- ============================================
@@ -383,7 +383,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (С РАБОЧИМ БОКСОМ)
+-- СЕКЦИЯ: ESP (ПОЛНОСТЬЮ ПЕРЕДЕЛАННАЯ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -452,12 +452,12 @@ local function createESP(targetPlayer)
     nameLabel.TextColor3 = espSettings.nameColor
     nameLabel.TextSize = espSettings.nameSize
     nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextScaled = true
+    nameLabel.TextScaled = false
     nameLabel.Visible = false
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- Бокс (обычный Frame с рамкой)
+    -- Бокс
     local boxFrame = Instance.new("Frame")
     boxFrame.Size = UDim2.new(0, 80, 0, 120)
     boxFrame.BackgroundTransparency = 1
@@ -467,9 +467,9 @@ local function createESP(targetPlayer)
     boxFrame.Parent = espGui
     espData.boxFrame = boxFrame
     
-    -- Здоровье (фон + полоска)
+    -- Здоровье
     local healthBg = Instance.new("Frame")
-    healthBg.Size = UDim2.new(0, 80, 0, 8)
+    healthBg.Size = UDim2.new(0, 80, 0, 10)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     healthBg.BackgroundTransparency = 0.5
     healthBg.BorderSizePixel = 1
@@ -492,9 +492,9 @@ local function createESP(targetPlayer)
         
         local char = targetPlayer.Character
         if not char then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
+            if nameLabel then nameLabel.Visible = false end
+            if boxFrame then boxFrame.Visible = false end
+            if healthBg then healthBg.Visible = false end
             return
         end
         
@@ -502,9 +502,9 @@ local function createESP(targetPlayer)
         local head = char:FindFirstChild("Head")
         local humanoid = char:FindFirstChildOfClass("Humanoid")
         if not rootPart then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
+            if nameLabel then nameLabel.Visible = false end
+            if boxFrame then boxFrame.Visible = false end
+            if healthBg then healthBg.Visible = false end
             return
         end
         
@@ -515,9 +515,9 @@ local function createESP(targetPlayer)
         local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2, 0))
         
         if not rootOnScreen then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
+            if nameLabel then nameLabel.Visible = false end
+            if boxFrame then boxFrame.Visible = false end
+            if healthBg then healthBg.Visible = false end
             return
         end
         
@@ -526,40 +526,40 @@ local function createESP(targetPlayer)
         local boxSize = math.max(playerWidth, 50)
         local boxHeight = math.max(playerHeight, 70)
         
-        -- ИМЯ (над головой)
-        if espSettings.showName then
+        -- ИМЯ
+        if espSettings.showName and nameLabel then
             nameLabel.Visible = true
-            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 30)
+            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 40)
             nameLabel.TextColor3 = espSettings.nameColor
             nameLabel.TextSize = espSettings.nameSize
         else
-            nameLabel.Visible = false
+            if nameLabel then nameLabel.Visible = false end
         end
         
-        -- БОКС (от головы до ног) - теперь точно виден
-        if espSettings.showBox then
+        -- БОКС
+        if espSettings.showBox and boxFrame then
             boxFrame.Visible = true
             boxFrame.Size = UDim2.new(0, boxSize, 0, boxHeight)
             boxFrame.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 5)
             boxFrame.BorderColor3 = espSettings.boxColor
             boxFrame.BorderSizePixel = 3
         else
-            boxFrame.Visible = false
+            if boxFrame then boxFrame.Visible = false end
         end
         
-        -- ЗДОРОВЬЕ (под ником, над головой)
-        if espSettings.showHealth and humanoid then
+        -- ЗДОРОВЬЕ
+        if espSettings.showHealth and humanoid and healthBg and healthBar then
             local health = humanoid.Health
             local maxHealth = humanoid.MaxHealth
             local percent = math.clamp(health / maxHealth, 0, 1)
             
             healthBg.Visible = true
-            healthBg.Size = UDim2.new(0, boxSize, 0, 8)
-            healthBg.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 20)
+            healthBg.Size = UDim2.new(0, boxSize, 0, 10)
+            healthBg.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 25)
             healthBar.Size = UDim2.new(percent, 0, 1, 0)
             healthBar.BackgroundColor3 = espSettings.healthColor
         else
-            healthBg.Visible = false
+            if healthBg then healthBg.Visible = false end
         end
     end)
     
@@ -595,7 +595,6 @@ local function updateESPSettings()
         end
         if espData.boxFrame then
             espData.boxFrame.BorderColor3 = espSettings.boxColor
-            espData.boxFrame.BorderSizePixel = 3
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor

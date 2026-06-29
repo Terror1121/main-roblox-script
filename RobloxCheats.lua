@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch001",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch002",
 })
 
 -- ============================================
@@ -444,7 +444,7 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС (2D рамка через BillboardGui)
+    -- БОКС (2D рамка)
     local boxBillboard = Instance.new("BillboardGui")
     boxBillboard.Size = UDim2.new(0, 3, 0, 5)
     boxBillboard.Adornee = rootPart
@@ -491,6 +491,7 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
+    -- ОБНОВЛЕНИЕ ЗДОРОВЬЯ
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if humanoid then
         local healthConnection = runService.RenderStepped:Connect(function()
@@ -539,13 +540,22 @@ local function updateESPSettings()
         if espData.nameLabel then
             espData.nameLabel.TextColor3 = espSettings.nameColor
             espData.nameLabel.TextSize = espSettings.nameSize
+            if espData.nameBillboard then
+                espData.nameBillboard.Enabled = espEnabled and espSettings.showName
+            end
         end
         if espData.boxFrame then
             espData.boxFrame.BorderColor3 = espSettings.boxColor
-            espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
+            if espData.boxBillboard then
+                espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
+            end
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor
+            if espData.healthBillboard then
+                espData.healthBillboard.Enabled = espEnabled and espSettings.showHealth
+                espData.healthBillboard.Size = UDim2.new(0, espSettings.healthSize * 3, 0, espSettings.healthSize * 0.3)
+            end
         end
     end
 end

@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd008",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd009",
 })
 
 -- ============================================
@@ -390,12 +390,17 @@ local espConnections = {}
 local espObjects = {}
 local espGui = nil
 
--- НАСТРОЙКИ ESP ПО УМОЛЧАНИЮ
+-- НАСТРОЙКИ ESP
 local espSettings = {
     showName = true,
     showBox = true,
-    showLine = true,
-    color = Color3.fromRGB(255, 0, 0),
+    showHealth = true,
+    nameColor = Color3.fromRGB(255, 255, 255),
+    boxColor = Color3.fromRGB(255, 0, 0),
+    healthColor = Color3.fromRGB(0, 255, 0),
+    nameSize = 20,
+    boxSize = 3,
+    healthSize = 3,
 }
 
 -- УДАЛЕНИЕ ESP ДЛЯ ИГРОКА
@@ -407,7 +412,9 @@ local function removeESP(targetPlayer)
             if billboard then billboard:Destroy() end
         end
         if espData.box then espData.box:Destroy() end
-        if espData.line then espData.line:Destroy() end
+        if espData.healthBar then espData.healthBar:Destroy() end
+        if espData.healthBg then espData.healthBg:Destroy() end
+        if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
     end
 end
@@ -437,16 +444,16 @@ local function createESP(targetPlayer)
     
     local head = char:FindFirstChild("Head")
     local rootPart = char:FindFirstChild("HumanoidRootPart")
-    local attachPart = head or rootPart
-    if not attachPart then return end
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not rootPart then return end
     
     local espData = {}
     
     -- BillboardGui для ника
     local billboard = Instance.new("BillboardGui")
     billboard.Size = UDim2.new(0, 200, 0, 30)
-    billboard.Adornee = attachPart
-    billboard.StudsOffset = Vector3.new(0, (head and 2.5 or 0), 0)
+    billboard.Adornee = head or rootPart
+    billboard.StudsOffset = Vector3.new(0, (head and 3 or 0.5), 0)
     billboard.AlwaysOnTop = true
     billboard.ResetOnSpawn = false
     billboard.Parent = char
@@ -456,7 +463,7 @@ local function createESP(targetPlayer)
     nameLabel.Size = UDim2.new(1, 0, 1, 0)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = targetPlayer.Name
-    nameLabel.TextColor3 = espSettings.color
+    nameLabel.TextColor3 = espSettings.nameColor
     nameLabel.TextScaled = true
     nameLabel.Font = Enum.Font.GothamBold
     nameLabel.Parent = billboard
@@ -464,60 +471,63 @@ local function createESP(targetPlayer)
     
     -- SelectionBox для бокса
     local box = Instance.new("SelectionBox")
-    box.Color3 = espSettings.color
+    box.Color3 = espSettings.boxColor
     box.Transparency = 0.5
     box.LineThickness = 0.1
-    box.Adornee = rootPart or attachPart
+    box.Adornee = rootPart
     box.Parent = char
     box.Visible = espEnabled and espSettings.showBox
     espData.box = box
     
-    -- Линия-трейсер
-    if not espGui then
-        espGui = Instance.new("ScreenGui")
-        espGui.Name = "ESPGui"
-        espGui.Parent = game.CoreGui
-        espGui.ResetOnSpawn = false
+    -- Здоровье (BillboardGui + Frame)
+    if humanoid then
+        local healthBillboard = Instance.new("BillboardGui")
+        healthBillboard.Size = UDim2.new(0, 100, 0, 10)
+        healthBillboard.Adornee = rootPart
+        healthBillboard.StudsOffset = Vector3.new(0, -1.5, 0)
+        healthBillboard.AlwaysOnTop = true
+        healthBillboard.ResetOnSpawn = false
+        healthBillboard.Parent = char
+        healthBillboard.Enabled = espEnabled and espSettings.showHealth
+        
+        -- Фон здоровья
+        local healthBg = Instance.new("Frame")
+        healthBg.Size = UDim2.new(1, 0, 1, 0)
+        healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        healthBg.BackgroundTransparency = 0.5
+        healthBg.BorderSizePixel = 0
+        healthBg.Parent = healthBillboard
+        
+        -- Полоска здоровья
+        local healthBar = Instance.new("Frame")
+        healthBar.Size = UDim2.new(1, 0, 1, 0)
+        healthBar.BackgroundColor3 = espSettings.healthColor
+        healthBar.BorderSizePixel = 0
+        healthBar.Parent = healthBg
+        
+        espData.healthBillboard = healthBillboard
+        espData.healthBg = healthBg
+        espData.healthBar = healthBar
+        
+        -- Обновление здоровья
+        local healthConnection = runService.RenderStepped:Connect(function()
+            if not espEnabled or not espSettings.showHealth then
+                if healthBillboard then healthBillboard.Enabled = false end
+                return
+            end
+            if healthBillboard then healthBillboard.Enabled = true end
+            if humanoid and healthBar then
+                local health = humanoid.Health
+                local maxHealth = humanoid.MaxHealth
+                local percent = math.clamp(health / maxHealth, 0, 1)
+                healthBar.Size = UDim2.new(percent, 0, 1, 0)
+                healthBar.BackgroundColor3 = espSettings.healthColor
+            end
+        end)
+        table.insert(espConnections, healthConnection)
     end
     
-    local line = Instance.new("Frame")
-    line.Size = UDim2.new(0, 2, 0, 0)
-    line.BackgroundColor3 = espSettings.color
-    line.BorderSizePixel = 0
-    line.Parent = espGui
-    line.Visible = espEnabled and espSettings.showLine
-    espData.line = line
-    
     espObjects[targetPlayer] = espData
-    
-    -- Обновление позиции линии
-    local connection = runService.RenderStepped:Connect(function()
-        if not espEnabled then return end
-        if espSettings.showLine and espData.line and rootPart then
-            local rootPos = rootPart.Position
-            local screenPos = workspace.CurrentCamera:WorldToScreenPoint(rootPos)
-            local centerX = workspace.CurrentCamera.ViewportSize.X / 2
-            local centerY = workspace.CurrentCamera.ViewportSize.Y / 2
-            
-            local clampedX = math.clamp(screenPos.X, 0, workspace.CurrentCamera.ViewportSize.X)
-            local clampedY = math.clamp(screenPos.Y, 0, workspace.CurrentCamera.ViewportSize.Y)
-            
-            local diffX = clampedX - centerX
-            local diffY = clampedY - centerY
-            local distance = math.sqrt(diffX^2 + diffY^2)
-            
-            if distance > 0 then
-                espData.line.Size = UDim2.new(0, distance, 0, 2)
-                espData.line.Position = UDim2.new(0, centerX + diffX / 2, 0, centerY + diffY / 2)
-                espData.line.Rotation = math.deg(math.atan2(diffY, diffX))
-                espData.line.Visible = true
-            else
-                espData.line.Visible = false
-            end
-        end
-    end)
-    
-    table.insert(espConnections, connection)
     return espData
 end
 
@@ -543,36 +553,26 @@ local function toggleESP(state)
     end
 end
 
--- ОБНОВЛЕНИЕ ЦВЕТА
-local function updateESPColor(color)
-    espSettings.color = color
+-- ОБНОВЛЕНИЕ НАСТРОЕК
+local function updateESPSettings()
     for _, espData in pairs(espObjects) do
         if espData.nameLabel then
-            espData.nameLabel.TextColor3 = color
-        end
-        if espData.box then
-            espData.box.Color3 = color
-        end
-        if espData.line then
-            espData.line.BackgroundColor3 = color
-        end
-    end
-end
-
--- ОБНОВЛЕНИЕ ВИДИМОСТИ
-local function updateESPVisibility()
-    for _, espData in pairs(espObjects) do
-        if espData.nameLabel then
+            espData.nameLabel.TextColor3 = espSettings.nameColor
             local billboard = espData.nameLabel.Parent
             if billboard then
                 billboard.Enabled = espEnabled and espSettings.showName
             end
         end
         if espData.box then
+            espData.box.Color3 = espSettings.boxColor
             espData.box.Visible = espEnabled and espSettings.showBox
         end
-        if espData.line then
-            espData.line.Visible = espEnabled and espSettings.showLine
+        if espData.healthBar then
+            espData.healthBar.BackgroundColor3 = espSettings.healthColor
+            local billboard = espData.healthBar.Parent.Parent
+            if billboard then
+                billboard.Enabled = espEnabled and espSettings.showHealth
+            end
         end
     end
 end
@@ -588,20 +588,45 @@ local ESPToggle = TabESP:CreateToggle({
     Name = "Включить ESP",
     CurrentValue = false,
     Flag = "ESPToggle",
-    Info = "Включает/выключает ESP\nПоказывает имена, боксы и линии всех игроков",
+    Info = "Включает/выключает ESP\nПоказывает имена, боксы и здоровье всех игроков",
     Callback = function(Value)
         toggleESP(Value)
     end,
 })
 
--- ЦВЕТ ESP
-local ESPColorPicker = TabESP:CreateColorPicker({
-    Name = "Цвет ESP",
-    Color = Color3.fromRGB(255, 0, 0),
-    Flag = "ESPColor",
-    Info = "Выбери цвет для ника, бокса и линий",
+-- ЦВЕТ НИКА
+local NameColorPicker = TabESP:CreateColorPicker({
+    Name = "Цвет ника",
+    Color = Color3.fromRGB(255, 255, 255),
+    Flag = "ESPNameColor",
+    Info = "Выбери цвет для имени игрока",
     Callback = function(Color)
-        updateESPColor(Color)
+        espSettings.nameColor = Color
+        updateESPSettings()
+    end,
+})
+
+-- ЦВЕТ БОКСА
+local BoxColorPicker = TabESP:CreateColorPicker({
+    Name = "Цвет бокса",
+    Color = Color3.fromRGB(255, 0, 0),
+    Flag = "ESPBoxColor",
+    Info = "Выбери цвет для рамки вокруг игрока",
+    Callback = function(Color)
+        espSettings.boxColor = Color
+        updateESPSettings()
+    end,
+})
+
+-- ЦВЕТ ЗДОРОВЬЯ
+local HealthColorPicker = TabESP:CreateColorPicker({
+    Name = "Цвет здоровья",
+    Color = Color3.fromRGB(0, 255, 0),
+    Flag = "ESPHealthColor",
+    Info = "Выбери цвет для полоски здоровья",
+    Callback = function(Color)
+        espSettings.healthColor = Color
+        updateESPSettings()
     end,
 })
 
@@ -613,7 +638,7 @@ local NameToggle = TabESP:CreateToggle({
     Info = "Показывает имя игрока над головой",
     Callback = function(Value)
         espSettings.showName = Value
-        updateESPVisibility()
+        updateESPSettings()
     end,
 })
 
@@ -625,19 +650,76 @@ local BoxToggle = TabESP:CreateToggle({
     Info = "Показывает рамку вокруг игрока",
     Callback = function(Value)
         espSettings.showBox = Value
-        updateESPVisibility()
+        updateESPSettings()
     end,
 })
 
--- ПОКАЗЫВАТЬ ЛИНИИ
-local LineToggle = TabESP:CreateToggle({
-    Name = "Показывать линии",
+-- ПОКАЗЫВАТЬ ЗДОРОВЬЕ
+local HealthToggle = TabESP:CreateToggle({
+    Name = "Показывать здоровье",
     CurrentValue = true,
-    Flag = "ESPLineToggle",
-    Info = "Показывает линию от центра экрана до игрока (трейсер)",
+    Flag = "ESPHealthToggle",
+    Info = "Показывает полоску здоровья над игроком",
     Callback = function(Value)
-        espSettings.showLine = Value
-        updateESPVisibility()
+        espSettings.showHealth = Value
+        updateESPSettings()
+    end,
+})
+
+-- РАЗМЕР НИКА
+local NameSizeSlider = TabESP:CreateSlider({
+    Name = "Размер ника",
+    Range = {10, 40},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 20,
+    Flag = "ESPNameSize",
+    Info = "Регулирует размер имени",
+    Callback = function(Value)
+        espSettings.nameSize = Value
+        for _, espData in pairs(espObjects) do
+            if espData.nameLabel then
+                espData.nameLabel.TextSize = Value
+            end
+        end
+    end,
+})
+
+-- РАЗМЕР БОКСА
+local BoxSizeSlider = TabESP:CreateSlider({
+    Name = "Размер бокса",
+    Range = {1, 5},
+    Increment = 0.5,
+    Suffix = "",
+    CurrentValue = 3,
+    Flag = "ESPBoxSize",
+    Info = "Регулирует размер рамки",
+    Callback = function(Value)
+        espSettings.boxSize = Value
+        for _, espData in pairs(espObjects) do
+            if espData.box then
+                espData.box.Size = Vector3.new(Value, Value * 1.7, Value)
+            end
+        end
+    end,
+})
+
+-- РАЗМЕР ЗДОРОВЬЯ
+local HealthSizeSlider = TabESP:CreateSlider({
+    Name = "Размер здоровья",
+    Range = {1, 5},
+    Increment = 0.5,
+    Suffix = "",
+    CurrentValue = 3,
+    Flag = "ESPHealthSize",
+    Info = "Регулирует размер полоски здоровья",
+    Callback = function(Value)
+        espSettings.healthSize = Value
+        for _, espData in pairs(espObjects) do
+            if espData.healthBillboard then
+                espData.healthBillboard.Size = UDim2.new(0, Value * 30, 0, Value * 3)
+            end
+        end
     end,
 })
 

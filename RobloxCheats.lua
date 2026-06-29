@@ -243,12 +243,13 @@ local FlyKeybind = Tab:CreateKeybind({
 })
 
 -- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ NOCLIP (ИСПРАВЛЕНА)
+-- СЕКЦИЯ: НАСТРОЙКИ NOCLIP (ПРОСТАЯ ВЕРСИЯ)
 -- ============================================
 local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
 local noclipEnabled = false
 local noclipConnection = nil
+local noclipBodyVelocity = nil
 
 local function enableNoclip()
     if noclipEnabled then return end
@@ -257,14 +258,21 @@ local function enableNoclip()
     local char = player.Character
     if not char then return end
     
-    noclipConnection = runService.RenderStepped:Connect(function()
-        if not char or not char.Parent then return end
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
+    -- Отключаем столкновения у всех частей тела
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
         end
-    end)
+    end
+    
+    -- Создаем BodyVelocity, чтобы персонаж не падал сквозь пол (опционально)
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if rootPart then
+        noclipBodyVelocity = Instance.new("BodyVelocity")
+        noclipBodyVelocity.MaxForce = Vector3.new(0, 0, 0)
+        noclipBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        noclipBodyVelocity.Parent = rootPart
+    end
     
     print("✅ Noclip ВКЛЮЧЕН")
 end
@@ -273,52 +281,35 @@ local function disableNoclip()
     if not noclipEnabled then return end
     noclipEnabled = false
     
-    if noclipConnection then
-        noclipConnection:Disconnect()
-        noclipConnection = nil
-    end
-    
     local char = player.Character
     if char then
-        -- 1. Возвращаем столкновения
+        -- Включаем столкновения обратно
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = true
             end
         end
         
-        -- 2. Принудительно опускаем персонаж на землю
+        -- Опускаем персонаж на землю
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         local humanoid = char:FindFirstChildOfClass("Humanoid")
         if rootPart and humanoid then
-            -- Проверяем, есть ли земля под персонажем
-            local rayOrigin = rootPart.Position
-            local rayDirection = Vector3.new(0, -10, 0) -- Луч вниз на 10 метров
-            local raycastParams = RaycastParams.new()
-            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-            raycastParams.FilterDescendantsInstances = {char}
-            
-            local hit, position = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-            
-            if hit and position then
-                -- Если есть земля — опускаем персонаж на неё
-                local newPos = position + Vector3.new(0, 3, 0) -- +3, чтобы не провалиться
-                rootPart.CFrame = CFrame.new(newPos)
-                print("✅ Персонаж опущен на землю")
-            else
-                -- Если земли нет — опускаем вниз на 5 метров
-                rootPart.CFrame = rootPart.CFrame + Vector3.new(0, -5, 0)
-                print("⚠️ Земля не найдена, опущен на 5 метров")
-            end
-            
-            -- Сбрасываем скорость, чтобы персонаж не улетел
-            rootPart.Velocity = Vector3.new(0, 0, 0)
-            rootPart.RotVelocity = Vector3.new(0, 0, 0)
-            
-            -- Возвращаем нормальную гравитацию
+            -- Отключаем гравитацию на мгновение, чтобы персонаж упал
+            humanoid.PlatformStand = true
+            task.wait(0.1)
             humanoid.PlatformStand = false
             humanoid.UseJumpPower = true
+            
+            -- Сбрасываем скорость
+            rootPart.Velocity = Vector3.new(0, -10, 0) -- Толкаем вниз
+            rootPart.RotVelocity = Vector3.new(0, 0, 0)
         end
+    end
+    
+    -- Удаляем BodyVelocity
+    if noclipBodyVelocity then
+        noclipBodyVelocity:Destroy()
+        noclipBodyVelocity = nil
     end
     
     print("❌ Noclip ВЫКЛЮЧЕН")
@@ -360,7 +351,7 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "1Тест кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

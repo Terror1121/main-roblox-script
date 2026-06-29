@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd021",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch001",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (БЕЗОПАСНАЯ ВЕРСИЯ)
+-- СЕКЦИЯ: ESP (РАБОЧАЯ ВЕРСИЯ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -390,18 +390,16 @@ local espSettings = {
     healthSize = 3,
 }
 
--- УДАЛЕНИЕ ESP ДЛЯ ИГРОКА
 local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
         if espData.nameBillboard then espData.nameBillboard:Destroy() end
-        if espData.box then espData.box:Destroy() end
+        if espData.boxBillboard then espData.boxBillboard:Destroy() end
         if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
     end
 end
 
--- ОЧИСТКА ВСЕХ ESP
 local function clearAllESP()
     for _, connection in ipairs(espConnections) do
         connection:Disconnect()
@@ -413,7 +411,6 @@ local function clearAllESP()
     espObjects = {}
 end
 
--- СОЗДАНИЕ ESP ДЛЯ ИГРОКА
 local function createESP(targetPlayer)
     if targetPlayer == player then return end
     
@@ -426,7 +423,7 @@ local function createESP(targetPlayer)
     
     local espData = {}
     
-    -- ИМЯ (BillboardGui)
+    -- ИМЯ
     local nameBillboard = Instance.new("BillboardGui")
     nameBillboard.Size = UDim2.new(0, 200, 0, 30)
     nameBillboard.Adornee = head or rootPart
@@ -447,16 +444,26 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС (SelectionBox - работает всегда)
-    local box = Instance.new("SelectionBox")
-    box.Color3 = espSettings.boxColor
-    box.Transparency = 0.4
-    box.Adornee = rootPart
-    box.Parent = char
-    box.Visible = espEnabled and espSettings.showBox
-    espData.box = box
+    -- БОКС (2D рамка через BillboardGui)
+    local boxBillboard = Instance.new("BillboardGui")
+    boxBillboard.Size = UDim2.new(0, 3, 0, 5)
+    boxBillboard.Adornee = rootPart
+    boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
+    boxBillboard.AlwaysOnTop = true
+    boxBillboard.ResetOnSpawn = false
+    boxBillboard.Parent = char
+    boxBillboard.Enabled = espEnabled and espSettings.showBox
     
-    -- ЗДОРОВЬЕ (BillboardGui)
+    local boxFrame = Instance.new("Frame")
+    boxFrame.Size = UDim2.new(1, 0, 1, 0)
+    boxFrame.BackgroundTransparency = 1
+    boxFrame.BorderSizePixel = 2
+    boxFrame.BorderColor3 = espSettings.boxColor
+    boxFrame.Parent = boxBillboard
+    espData.boxFrame = boxFrame
+    espData.boxBillboard = boxBillboard
+    
+    -- ЗДОРОВЬЕ
     local healthBillboard = Instance.new("BillboardGui")
     healthBillboard.Size = UDim2.new(0, 3, 0, 0.3)
     healthBillboard.Adornee = head or rootPart
@@ -469,9 +476,8 @@ local function createESP(targetPlayer)
     local healthBg = Instance.new("Frame")
     healthBg.Size = UDim2.new(1, 0, 1, 0)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    healthBg.BackgroundTransparency = 0.3
-    healthBg.BorderSizePixel = 1
-    healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    healthBg.BackgroundTransparency = 0.4
+    healthBg.BorderSizePixel = 0
     healthBg.Parent = healthBillboard
     
     local healthBar = Instance.new("Frame")
@@ -485,7 +491,6 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
-    -- ОБНОВЛЕНИЕ ЗДОРОВЬЯ
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if humanoid then
         local healthConnection = runService.RenderStepped:Connect(function()
@@ -509,7 +514,6 @@ local function createESP(targetPlayer)
     return espData
 end
 
--- ОБНОВЛЕНИЕ ВСЕХ ESP
 local function refreshAllESP()
     clearAllESP()
     if espEnabled then
@@ -521,7 +525,6 @@ local function refreshAllESP()
     end
 end
 
--- ВКЛЮЧЕНИЕ/ВЫКЛЮЧЕНИЕ ESP
 local function toggleESP(state)
     espEnabled = state
     if state then
@@ -531,16 +534,15 @@ local function toggleESP(state)
     end
 end
 
--- ОБНОВЛЕНИЕ НАСТРОЕК
 local function updateESPSettings()
     for _, espData in pairs(espObjects) do
         if espData.nameLabel then
             espData.nameLabel.TextColor3 = espSettings.nameColor
             espData.nameLabel.TextSize = espSettings.nameSize
         end
-        if espData.box then
-            espData.box.Color3 = espSettings.boxColor
-            espData.box.Visible = espEnabled and espSettings.showBox
+        if espData.boxFrame then
+            espData.boxFrame.BorderColor3 = espSettings.boxColor
+            espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor

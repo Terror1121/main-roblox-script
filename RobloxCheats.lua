@@ -11,9 +11,28 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- 3. Создаем вкладки
+local TabInf = Window:CreateTab("Информация", "info")
 local Tab = Window:CreateTab("Игрок", "user-round")
 local TabESP = Window:CreateTab("ESP", "scan-eye")
 local TabPr = Window:CreateTab("Прочее", "wrench")
+
+-- ============================================
+-- СЕКЦИЯ: ИНФОРМАЦИЯ
+-- ============================================
+local SectionInfo = TabInf:CreateSection("О чите")
+
+local InfoLabel = Instance.new("TextLabel")
+InfoLabel.Parent = TabInf
+InfoLabel.Size = UDim2.new(1, -20, 0, 80)
+InfoLabel.Position = UDim2.new(0, 10, 0, 60)
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Text = "Сделано разработчиком namesick\nВерсия alfa-001-upd001"
+InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+InfoLabel.TextSize = 18
+InfoLabel.Font = Enum.Font.GothamBold
+InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
+InfoLabel.LineHeight = 1.5
 
 -- ============================================
 -- ПЕРЕМЕННЫЕ
@@ -523,7 +542,7 @@ local function toggleESP(state)
     end
 end
 
--- Обновление цвета всех ESP (ИСПРАВЛЕНО)
+-- Обновление цвета всех ESP
 local function updateESPColor(color)
     espSettings.color = color
     for _, espData in pairs(espObjects) do
@@ -539,26 +558,21 @@ local function updateESPColor(color)
     end
 end
 
--- Обновление видимости элементов (ИСПРАВЛЕНО)
+-- Обновление видимости элементов
 local function updateESPVisibility()
     for _, espData in pairs(espObjects) do
-        -- Обновляем имя
         if espData.nameLabel then
             local billboard = espData.nameLabel.Parent
             if billboard then
                 billboard.Enabled = espEnabled and espSettings.showName
             end
         end
-        
-        -- Обновляем бокс
         if espData.box then
             local surface = espData.box.Parent
             if surface then
                 surface.Enabled = espEnabled and espSettings.showBox
             end
         end
-        
-        -- Обновляем линию
         if espData.line then
             espData.line.Visible = espEnabled and espSettings.showLine
         end
@@ -651,7 +665,7 @@ end)
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
-    Name = "Т1ест кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

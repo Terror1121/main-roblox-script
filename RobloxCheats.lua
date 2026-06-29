@@ -10,7 +10,7 @@ local Window = Rayfield:CreateWindow({
     ToggleUIKeybind = Enum.KeyCode.G,
 })
 
--- 3. Создаем вкладку
+-- 3. Создаем вкладки
 local Tab = Window:CreateTab("Игрок", "user-round")
 local TabPr = Window:CreateTab("Прочее", "wrench")
 
@@ -244,7 +244,7 @@ local FlyKeybind = Tab:CreateKeybind({
 })
 
 -- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ NOCLIP (МАКСИМАЛЬНО ПРОСТОЙ)
+-- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
 -- ============================================
 local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
@@ -271,7 +271,6 @@ local function toggleNoclip()
     end
 end
 
--- Обработчик Noclip (просто отключает столкновения)
 runService.RenderStepped:Connect(function()
     if not noclipEnabled then return end
     local char = player.Character
@@ -308,22 +307,78 @@ local NoclipKeybind = Tab:CreateKeybind({
 })
 
 -- ============================================
+-- СЕКЦИЯ: БЕСКОНЕЧНЫЙ ПРЫЖОК (БЕЗ БИНДА)
+-- ============================================
+local SectionJump = Tab:CreateSection("Бесконечный прыжок")
+
+local jumpEnabled = false
+local jumpConnection = nil
+
+local function enableJump()
+    if jumpEnabled then return end
+    jumpEnabled = true
+    
+    jumpConnection = runService.RenderStepped:Connect(function()
+        if not jumpEnabled then return end
+        local char = player.Character
+        if not char then return end
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+        
+        if userInput:IsKeyDown(Enum.KeyCode.Space) then
+            if humanoid:GetState() == Enum.HumanoidStateType.Freefall or 
+               humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+                humanoid.Jump = true
+            end
+        end
+    end)
+    
+    print("✅ Бесконечный прыжок ВКЛЮЧЕН")
+end
+
+local function disableJump()
+    if not jumpEnabled then return end
+    jumpEnabled = false
+    
+    if jumpConnection then
+        jumpConnection:Disconnect()
+        jumpConnection = nil
+    end
+    
+    print("❌ Бесконечный прыжок ВЫКЛЮЧЕН")
+end
+
+local JumpToggle = Tab:CreateToggle({
+    Name = "Активировать бесконечный прыжок",
+    CurrentValue = false,
+    Flag = "JumpToggle",
+    Info = "Позволяет прыгать бесконечно\n(зажми пробел)",
+    Callback = function(Value)
+        if Value then
+            enableJump()
+        else
+            disableJump()
+        end
+    end,
+})
+
+-- ============================================
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
-    Name = "Тест кнопка",
+    Name = "1Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
 })
 
-
 local DestroyButton = TabPr:CreateButton({
     Name = "Уничтожить меню",
-    Callback = function ()
+    Callback = function()
         Rayfield:Destroy()
     end,
 })
+
 -- ============================================
 -- ОБРАБОТЧИКИ КЛАВИШ
 -- ============================================
@@ -363,9 +418,13 @@ player.CharacterAdded:Connect(function()
         enableNoclip()
         NoclipToggle:Set(true)
     end
+    if jumpEnabled then
+        disableJump()
+        task.wait(0.1)
+        enableJump()
+        JumpToggle:Set(true)
+    end
 end)
-
--- РЕЛИЗ 10-19 29/06/2026
 
 -- ============================================
 -- ВЫВОД В КОНСОЛЬ
@@ -374,3 +433,4 @@ print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
 print("🪁 Полет: включи через переключатель или нажми " .. FlyKeybind.CurrentKeybind)
 print("🧱 Noclip: включи через переключатель или нажми " .. NoclipKeybind.CurrentKeybind)
+print("🦘 Бесконечный прыжок: включи через переключатель")

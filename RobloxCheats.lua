@@ -24,7 +24,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 -- Параграф с информацией
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd005",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd006",
 })
 
 -- ============================================
@@ -374,7 +374,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP
+-- СЕКЦИЯ: ESP (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -422,9 +422,8 @@ local function createESP(targetPlayer)
     nameLabel.Parent = billboard
     espData.nameLabel = nameLabel
     
-    -- SelectionBox для бокса
+    -- SelectionBox для бокса (без Size)
     local box = Instance.new("SelectionBox")
-    box.Size = Vector3.new(3, 5, 3)
     box.Color3 = espSettings.color
     box.Transparency = 0.5
     box.LineThickness = 0.1
@@ -642,7 +641,7 @@ end)
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
-    Name = "Тест кнопка",
+    Name = "Тестовая кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

@@ -1,7 +1,5 @@
--- 1. Загружаем библиотеку
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 2. Создаем главное окно
 local Window = Rayfield:CreateWindow({
     Name = "Main Script",
     LoadingTitle = "Загрузка...",
@@ -10,34 +8,23 @@ local Window = Rayfield:CreateWindow({
     ToggleUIKeybind = Enum.KeyCode.G,
 })
 
--- 3. Создаем вкладки
 local TabInf = Window:CreateTab("Информация", "info")
 local Tab = Window:CreateTab("Игрок", "user-round")
 local TabESP = Window:CreateTab("ESP", "scan-eye")
 local TabPr = Window:CreateTab("Прочее", "wrench")
 
--- ============================================
--- СЕКЦИЯ: ИНФОРМАЦИЯ
--- ============================================
 local SectionInfo = TabInf:CreateSection("О чите")
 
--- Параграф с информацией
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd006",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd007",
 })
 
--- ============================================
--- ПЕРЕМЕННЫЕ
--- ============================================
 local player = game.Players.LocalPlayer
 local runService = game:GetService("RunService")
 local userInput = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
--- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ СКОРОСТИ
--- ============================================
 local SectionSpeed = Tab:CreateSection("Настройки скорости")
 
 local SPEED = 50
@@ -128,9 +115,6 @@ local ModeToggle = Tab:CreateToggle({
     end,
 })
 
--- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ ПОЛЁТА
--- ============================================
 local SectionFly = Tab:CreateSection("Настройки полёта")
 
 local flying = false
@@ -257,9 +241,6 @@ local FlyKeybind = Tab:CreateKeybind({
     end,
 })
 
--- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
--- ============================================
 local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
 local noclipEnabled = false
@@ -320,9 +301,6 @@ local NoclipKeybind = Tab:CreateKeybind({
     end,
 })
 
--- ============================================
--- СЕКЦИЯ: БЕСКОНЕЧНЫЙ ПРЫЖОК
--- ============================================
 local SectionJump = Tab:CreateSection("Бесконечный прыжок")
 
 local jumpEnabled = false
@@ -373,14 +351,11 @@ local JumpToggle = Tab:CreateToggle({
     end,
 })
 
--- ============================================
--- СЕКЦИЯ: ESP (ИСПРАВЛЕННАЯ ВЕРСИЯ)
--- ============================================
 local espEnabled = false
 local espConnections = {}
 local espObjects = {}
+local espGui = nil
 
--- Настройки ESP по умолчанию
 local espSettings = {
     showName = true,
     showBox = true,
@@ -388,7 +363,6 @@ local espSettings = {
     color = Color3.fromRGB(255, 0, 0),
 }
 
--- Создание ESP для игрока
 local function createESP(targetPlayer)
     if targetPlayer == player then return end
     
@@ -402,7 +376,6 @@ local function createESP(targetPlayer)
     
     local espData = {}
     
-    -- BillboardGui для ника
     local billboard = Instance.new("BillboardGui")
     billboard.Size = UDim2.new(0, 200, 0, 30)
     billboard.Adornee = attachPart
@@ -422,7 +395,6 @@ local function createESP(targetPlayer)
     nameLabel.Parent = billboard
     espData.nameLabel = nameLabel
     
-    -- SelectionBox для бокса (без Size)
     local box = Instance.new("SelectionBox")
     box.Color3 = espSettings.color
     box.Transparency = 0.5
@@ -432,8 +404,6 @@ local function createESP(targetPlayer)
     box.Visible = espEnabled and espSettings.showBox
     espData.box = box
     
-    -- Линия-трейсер
-    local espGui = game.CoreGui:FindFirstChild("ESPGui")
     if not espGui then
         espGui = Instance.new("ScreenGui")
         espGui.Name = "ESPGui"
@@ -451,26 +421,26 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
-    -- Обновление позиции линии
     local connection = runService.RenderStepped:Connect(function()
         if not espEnabled then return end
         if espSettings.showLine and espData.line and rootPart then
             local rootPos = rootPart.Position
-            local screenPos, onScreen = workspace.CurrentCamera:WorldToScreenPoint(rootPos)
-            if onScreen then
-                local centerX = workspace.CurrentCamera.ViewportSize.X / 2
-                local centerY = workspace.CurrentCamera.ViewportSize.Y / 2
-                local diffX = screenPos.X - centerX
-                local diffY = screenPos.Y - centerY
-                local distance = math.sqrt(diffX^2 + diffY^2)
-                if distance > 0 then
-                    espData.line.Size = UDim2.new(0, distance, 0, 2)
-                    espData.line.Position = UDim2.new(0, centerX + diffX / 2, 0, centerY + diffY / 2)
-                    espData.line.Rotation = math.deg(math.atan2(diffY, diffX))
-                    espData.line.Visible = true
-                else
-                    espData.line.Visible = false
-                end
+            local screenPos = workspace.CurrentCamera:WorldToScreenPoint(rootPos)
+            local centerX = workspace.CurrentCamera.ViewportSize.X / 2
+            local centerY = workspace.CurrentCamera.ViewportSize.Y / 2
+            
+            local clampedX = math.clamp(screenPos.X, 0, workspace.CurrentCamera.ViewportSize.X)
+            local clampedY = math.clamp(screenPos.Y, 0, workspace.CurrentCamera.ViewportSize.Y)
+            
+            local diffX = clampedX - centerX
+            local diffY = clampedY - centerY
+            local distance = math.sqrt(diffX^2 + diffY^2)
+            
+            if distance > 0 then
+                espData.line.Size = UDim2.new(0, distance, 0, 2)
+                espData.line.Position = UDim2.new(0, centerX + diffX / 2, 0, centerY + diffY / 2)
+                espData.line.Rotation = math.deg(math.atan2(diffY, diffX))
+                espData.line.Visible = true
             else
                 espData.line.Visible = false
             end
@@ -481,7 +451,6 @@ local function createESP(targetPlayer)
     return espData
 end
 
--- Удаление ESP для игрока
 local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
@@ -495,7 +464,17 @@ local function removeESP(targetPlayer)
     end
 end
 
--- Очистка всех ESP
+local function refreshAllESP()
+    clearAllESP()
+    if espEnabled then
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer ~= player then
+                createESP(targetPlayer)
+            end
+        end
+    end
+end
+
 local function clearAllESP()
     for _, connection in ipairs(espConnections) do
         connection:Disconnect()
@@ -505,23 +484,21 @@ local function clearAllESP()
         removeESP(targetPlayer)
     end
     espObjects = {}
+    if espGui then
+        espGui:Destroy()
+        espGui = nil
+    end
 end
 
--- Включение/выключение ESP
 local function toggleESP(state)
     espEnabled = state
     if state then
-        for _, targetPlayer in ipairs(Players:GetPlayers()) do
-            if targetPlayer ~= player then
-                createESP(targetPlayer)
-            end
-        end
+        refreshAllESP()
     else
         clearAllESP()
     end
 end
 
--- Обновление цвета всех ESP
 local function updateESPColor(color)
     espSettings.color = color
     for _, espData in pairs(espObjects) do
@@ -537,7 +514,6 @@ local function updateESPColor(color)
     end
 end
 
--- Обновление видимости элементов
 local function updateESPVisibility()
     for _, espData in pairs(espObjects) do
         if espData.nameLabel then
@@ -554,10 +530,6 @@ local function updateESPVisibility()
         end
     end
 end
-
--- ============================================
--- ИНТЕРФЕЙС ESP В МЕНЮ
--- ============================================
 
 local SectionESP = TabESP:CreateSection("Настройки ESP")
 
@@ -614,7 +586,6 @@ local LineToggle = TabESP:CreateToggle({
     end,
 })
 
--- Обработчики появления/ухода игроков
 Players.PlayerAdded:Connect(function(targetPlayer)
     if espEnabled then
         createESP(targetPlayer)
@@ -628,18 +599,10 @@ end)
 player.CharacterAdded:Connect(function()
     if espEnabled then
         task.wait(0.5)
-        clearAllESP()
-        for _, targetPlayer in ipairs(Players:GetPlayers()) do
-            if targetPlayer ~= player then
-                createESP(targetPlayer)
-            end
-        end
+        refreshAllESP()
     end
 end)
 
--- ============================================
--- ТЕСТОВАЯ КНОПКА
--- ============================================
 local TButton = TabPr:CreateButton({
     Name = "Тестовая кнопка",
     Callback = function()
@@ -654,11 +617,6 @@ local DestroyButton = TabPr:CreateButton({
     end,
 })
 
--- ============================================
--- ОБРАБОТЧИКИ КЛАВИШ
--- ============================================
-
--- Полёт
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == FlyKeybind.CurrentKeybind then
@@ -668,7 +626,6 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Noclip
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == NoclipKeybind.CurrentKeybind then
@@ -678,9 +635,6 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- ============================================
--- ВОССТАНОВЛЕНИЕ ПРИ РЕСПАВНЕ
--- ============================================
 player.CharacterAdded:Connect(function()
     task.wait(0.5)
     if flying then
@@ -701,9 +655,6 @@ player.CharacterAdded:Connect(function()
     end
 end)
 
--- ============================================
--- ВЫВОД В КОНСОЛЬ
--- ============================================
 print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
 print("🪁 Полет: включи через переключатель или нажми " .. FlyKeybind.CurrentKeybind)

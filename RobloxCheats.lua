@@ -12,6 +12,7 @@ local Window = Rayfield:CreateWindow({
 
 -- 3. Создаем вкладку
 local Tab = Window:CreateTab("Игрок", "user-round")
+local TabPr = Window:CreateTab("Прочее", "wrench")
 
 -- ============================================
 -- ПЕРЕМЕННЫЕ

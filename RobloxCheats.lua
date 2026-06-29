@@ -203,7 +203,6 @@ local function toggleFly()
     else
         enableFly()
     end
-    -- НЕ СТАВИМ FlyToggle:Set() ЗДЕСЬ
 end
 
 local FlyToggle = Tab:CreateToggle({
@@ -217,7 +216,7 @@ local FlyToggle = Tab:CreateToggle({
         else
             disableFly()
         end
-        -- НЕ СТАВИМ FlyToggle:Set() ЗДЕСЬ
+        FlyToggle:Set(flying)
     end,
 })
 
@@ -301,7 +300,6 @@ local function toggleNoclip()
     else
         enableNoclip()
     end
-    -- НЕ СТАВИМ NoclipToggle:Set() ЗДЕСЬ
 end
 
 local NoclipToggle = Tab:CreateToggle({
@@ -315,7 +313,7 @@ local NoclipToggle = Tab:CreateToggle({
         else
             disableNoclip()
         end
-        -- НЕ СТАВИМ NoclipToggle:Set() ЗДЕСЬ
+        NoclipToggle:Set(noclipEnabled)
     end,
 })
 
@@ -334,31 +332,55 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Т2ест кнопка",
+    Name = "Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,
 })
 
 -- ============================================
--- ОБРАБОТЧИКИ КЛАВИШ
+-- ОБРАБОТЧИКИ КЛАВИШ (С ПЕРЕЗАПУСКОМ)
 -- ============================================
 
--- Полёт (синхронизация только здесь)
+-- Полёт (используем InputBegan + InputEnded)
+local flyKeyPressed = false
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == flyKeybind then
-        toggleFly()
-        FlyToggle:Set(flying)
+        if not flyKeyPressed then
+            flyKeyPressed = true
+            toggleFly()
+            FlyToggle:Set(flying)
+            print("🔑 Клавиша полета нажата, flying:", flying)
+        end
     end
 end)
 
--- Noclip (синхронизация только здесь)
+userInput.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode.Name == flyKeybind then
+        flyKeyPressed = false
+    end
+end)
+
+-- Noclip (используем InputBegan + InputEnded)
+local noclipKeyPressed = false
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == noclipKeybind then
-        toggleNoclip()
-        NoclipToggle:Set(noclipEnabled)
+        if not noclipKeyPressed then
+            noclipKeyPressed = true
+            toggleNoclip()
+            NoclipToggle:Set(noclipEnabled)
+            print("🔑 Клавиша Noclip нажата, noclipEnabled:", noclipEnabled)
+        end
+    end
+end)
+
+userInput.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode.Name == noclipKeybind then
+        noclipKeyPressed = false
     end
 end)
 

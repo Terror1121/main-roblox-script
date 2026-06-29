@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd011",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd012",
 })
 
 -- ============================================
@@ -383,14 +383,13 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (ПОВЕРХ ВСЕГО)
+-- СЕКЦИЯ: ESP (ПОВЕРХ ВСЕГО, ИСПРАВЛЕННАЯ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
 local espObjects = {}
 local espGui = nil
 
--- НАСТРОЙКИ ESP
 local espSettings = {
     showName = true,
     showBox = true,
@@ -402,7 +401,6 @@ local espSettings = {
     healthSize = 3,
 }
 
--- СОЗДАНИЕ GUI (поверх всего)
 local function createESPGui()
     if espGui then return end
     espGui = Instance.new("ScreenGui")
@@ -413,7 +411,6 @@ local function createESPGui()
     espGui.DisplayOrder = 999
 end
 
--- УДАЛЕНИЕ ESP ДЛЯ ИГРОКА
 local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
@@ -425,7 +422,6 @@ local function removeESP(targetPlayer)
     end
 end
 
--- ОЧИСТКА ВСЕХ ESP
 local function clearAllESP()
     for _, connection in ipairs(espConnections) do
         connection:Disconnect()
@@ -441,7 +437,6 @@ local function clearAllESP()
     end
 end
 
--- СОЗДАНИЕ ESP ДЛЯ ИГРОКА
 local function createESP(targetPlayer)
     if targetPlayer == player then return end
     
@@ -449,7 +444,6 @@ local function createESP(targetPlayer)
     
     local espData = {}
     
-    -- Имя
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0, 200, 0, 30)
     nameLabel.BackgroundTransparency = 1
@@ -462,19 +456,17 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- Бокс (рамка вокруг игрока в 2D)
     local boxFrame = Instance.new("Frame")
     boxFrame.Size = UDim2.new(0, 50, 0, 80)
     boxFrame.BackgroundTransparency = 1
-    boxFrame.BorderSizePixel = 2
+    boxFrame.BorderSizePixel = 3
     boxFrame.BorderColor3 = espSettings.boxColor
     boxFrame.Visible = false
     boxFrame.Parent = espGui
     espData.boxFrame = boxFrame
     
-    -- Здоровье
     local healthBg = Instance.new("Frame")
-    healthBg.Size = UDim2.new(0, 80, 0, 10)
+    healthBg.Size = UDim2.new(0, 80, 0, 8)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     healthBg.BackgroundTransparency = 0.5
     healthBg.BorderSizePixel = 1
@@ -492,26 +484,25 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
-    -- Обновление позиций
     local connection = runService.RenderStepped:Connect(function()
         if not espEnabled then return end
         
         local char = targetPlayer.Character
-        if not char then 
+        if not char then
             nameLabel.Visible = false
             boxFrame.Visible = false
             healthBg.Visible = false
-            return 
+            return
         end
         
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         local head = char:FindFirstChild("Head")
         local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if not rootPart then 
+        if not rootPart then
             nameLabel.Visible = false
             boxFrame.Visible = false
             healthBg.Visible = false
-            return 
+            return
         end
         
         local camera = workspace.CurrentCamera
@@ -527,42 +518,41 @@ local function createESP(targetPlayer)
             return
         end
         
-        local viewportSize = camera.ViewportSize
         local playerHeight = math.abs(rootPos.Y - headPos.Y)
-        local playerWidth = playerHeight * 0.5
+        local playerWidth = playerHeight * 0.45
         local boxSize = math.max(playerWidth, 40)
         local boxHeight = math.max(playerHeight, 60)
         
-        -- Обновление имени
-        if espSettings.showName and espSettings.showName then
+        -- ИМЯ (на 20 пикселей выше головы)
+        if espSettings.showName then
             nameLabel.Visible = true
-            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 30 - (espSettings.showHealth and 15 or 0))
-            nameLabel.Text = targetPlayer.Name
+            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 35)
             nameLabel.TextColor3 = espSettings.nameColor
             nameLabel.TextSize = espSettings.nameSize
         else
             nameLabel.Visible = false
         end
         
-        -- Обновление бокса
+        -- БОКС (от головы до ног)
         if espSettings.showBox then
             boxFrame.Visible = true
             boxFrame.Size = UDim2.new(0, boxSize, 0, boxHeight)
             boxFrame.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 5)
             boxFrame.BorderColor3 = espSettings.boxColor
+            boxFrame.BorderSizePixel = 3
         else
             boxFrame.Visible = false
         end
         
-        -- Обновление здоровья
+        -- ЗДОРОВЬЕ (под ником, над головой)
         if espSettings.showHealth and humanoid then
-            healthBg.Visible = true
-            healthBg.Size = UDim2.new(0, boxSize, 0, 10)
-            healthBg.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y + boxHeight - 10)
-            
             local health = humanoid.Health
             local maxHealth = humanoid.MaxHealth
             local percent = math.clamp(health / maxHealth, 0, 1)
+            
+            healthBg.Visible = true
+            healthBg.Size = UDim2.new(0, boxSize, 0, 8)
+            healthBg.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 20)
             healthBar.Size = UDim2.new(percent, 0, 1, 0)
             healthBar.BackgroundColor3 = espSettings.healthColor
         else
@@ -574,7 +564,6 @@ local function createESP(targetPlayer)
     return espData
 end
 
--- ОБНОВЛЕНИЕ ВСЕХ ESP
 local function refreshAllESP()
     clearAllESP()
     if espEnabled then
@@ -586,7 +575,6 @@ local function refreshAllESP()
     end
 end
 
--- ВКЛЮЧЕНИЕ/ВЫКЛЮЧЕНИЕ ESP
 local function toggleESP(state)
     espEnabled = state
     if state then
@@ -596,7 +584,6 @@ local function toggleESP(state)
     end
 end
 
--- ОБНОВЛЕНИЕ НАСТРОЕК
 local function updateESPSettings()
     for _, espData in pairs(espObjects) do
         if espData.nameLabel then
@@ -605,6 +592,7 @@ local function updateESPSettings()
         end
         if espData.boxFrame then
             espData.boxFrame.BorderColor3 = espSettings.boxColor
+            espData.boxFrame.BorderSizePixel = 3
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor
@@ -618,7 +606,6 @@ end
 
 local SectionESP = TabESP:CreateSection("Настройки ESP")
 
--- ВКЛЮЧИТЬ ESP
 local ESPToggle = TabESP:CreateToggle({
     Name = "Включить ESP",
     CurrentValue = false,
@@ -629,7 +616,6 @@ local ESPToggle = TabESP:CreateToggle({
     end,
 })
 
--- ЦВЕТ НИКА
 local NameColorPicker = TabESP:CreateColorPicker({
     Name = "Цвет ника",
     Color = Color3.fromRGB(255, 255, 255),
@@ -641,7 +627,6 @@ local NameColorPicker = TabESP:CreateColorPicker({
     end,
 })
 
--- ЦВЕТ БОКСА
 local BoxColorPicker = TabESP:CreateColorPicker({
     Name = "Цвет бокса",
     Color = Color3.fromRGB(0, 255, 255),
@@ -653,7 +638,6 @@ local BoxColorPicker = TabESP:CreateColorPicker({
     end,
 })
 
--- ЦВЕТ ЗДОРОВЬЯ
 local HealthColorPicker = TabESP:CreateColorPicker({
     Name = "Цвет здоровья",
     Color = Color3.fromRGB(0, 255, 0),
@@ -665,7 +649,6 @@ local HealthColorPicker = TabESP:CreateColorPicker({
     end,
 })
 
--- ПОКАЗЫВАТЬ ИМЕНА
 local NameToggle = TabESP:CreateToggle({
     Name = "Показывать имена",
     CurrentValue = true,
@@ -677,7 +660,6 @@ local NameToggle = TabESP:CreateToggle({
     end,
 })
 
--- ПОКАЗЫВАТЬ БОКС
 local BoxToggle = TabESP:CreateToggle({
     Name = "Показывать бокс",
     CurrentValue = true,
@@ -689,7 +671,6 @@ local BoxToggle = TabESP:CreateToggle({
     end,
 })
 
--- ПОКАЗЫВАТЬ ЗДОРОВЬЕ
 local HealthToggle = TabESP:CreateToggle({
     Name = "Показывать здоровье",
     CurrentValue = true,
@@ -701,7 +682,6 @@ local HealthToggle = TabESP:CreateToggle({
     end,
 })
 
--- РАЗМЕР НИКА
 local NameSizeSlider = TabESP:CreateSlider({
     Name = "Размер ника",
     Range = {10, 40},
@@ -716,7 +696,6 @@ local NameSizeSlider = TabESP:CreateSlider({
     end,
 })
 
--- РАЗМЕР ЗДОРОВЬЯ
 local HealthSizeSlider = TabESP:CreateSlider({
     Name = "Размер здоровья",
     Range = {1, 5},
@@ -731,7 +710,6 @@ local HealthSizeSlider = TabESP:CreateSlider({
     end,
 })
 
--- ОБРАБОТЧИКИ ПОЯВЛЕНИЯ/УХОДА ИГРОКОВ
 Players.PlayerAdded:Connect(function(targetPlayer)
     if espEnabled then
         createESP(targetPlayer)
@@ -742,7 +720,6 @@ Players.PlayerRemoving:Connect(function(targetPlayer)
     removeESP(targetPlayer)
 end)
 
--- ОБНОВЛЕНИЕ ПРИ РЕСПАВНЕ
 local function onCharacterAdded()
     if espEnabled then
         task.wait(0.3)
@@ -783,7 +760,6 @@ local DestroyButton = TabPr:CreateButton({
 -- ОБРАБОТЧИКИ КЛАВИШ
 -- ============================================
 
--- Полёт
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == FlyKeybind.CurrentKeybind then
@@ -793,7 +769,6 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Noclip
 userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == NoclipKeybind.CurrentKeybind then
@@ -804,7 +779,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- ============================================
--- ВОССТАНОВЛЕНИЕ ПРИ РЕСПАВНЕ (для самого игрока)
+-- ВОССТАНОВЛЕНИЕ ПРИ РЕСПАВНЕ
 -- ============================================
 player.CharacterAdded:Connect(function()
     task.wait(0.5)

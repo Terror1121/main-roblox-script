@@ -21,23 +21,11 @@ local TabPr = Window:CreateTab("Прочее", "wrench")
 -- ============================================
 local SectionInfo = TabInf:CreateSection("О чите")
 
-local InfoFrame = Instance.new("Frame")
-InfoFrame.Parent = SectionInfo
-InfoFrame.Size = UDim2.new(1, 0, 0, 80)
-InfoFrame.Position = UDim2.new(0, 0, 0, 5)
-InfoFrame.BackgroundTransparency = 1
-
-local InfoLabel = Instance.new("TextLabel")
-InfoLabel.Parent = InfoFrame
-InfoLabel.Size = UDim2.new(1, 0, 1, 0)
-InfoLabel.BackgroundTransparency = 1
-InfoLabel.Text = "Сделано разработчиком namesick\nВерсия alfa-001-upd003"
-InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfoLabel.TextSize = 18
-InfoLabel.Font = Enum.Font.GothamBold
-InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-InfoLabel.TextYAlignment = Enum.TextYAlignment.Top
-InfoLabel.LineHeight = 1.5
+-- Параграф с информацией
+local InfoParagraph = TabInf:CreateParagraph({
+    Title = "Информация",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd004",
+})
 
 -- ============================================
 -- ПЕРЕМЕННЫЕ

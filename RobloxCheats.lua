@@ -202,7 +202,6 @@ local function toggleFly()
     else
         enableFly()
     end
-    -- ❌ УБИРАЕМ FlyToggle:Set(flying) ОТСЮДА
 end
 
 local FlyToggle = Tab:CreateToggle({
@@ -216,7 +215,6 @@ local FlyToggle = Tab:CreateToggle({
         else
             disableFly()
         end
-        -- ❌ УБИРАЕМ FlyToggle:Set(flying) ОТСЮДА
     end,
 })
 
@@ -245,7 +243,7 @@ local FlyKeybind = Tab:CreateKeybind({
 })
 
 -- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
+-- СЕКЦИЯ: НАСТРОЙКИ NOCLIP (ИСПРАВЛЕНА)
 -- ============================================
 local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
@@ -282,10 +280,44 @@ local function disableNoclip()
     
     local char = player.Character
     if char then
+        -- 1. Возвращаем столкновения
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = true
             end
+        end
+        
+        -- 2. Принудительно опускаем персонаж на землю
+        local rootPart = char:FindFirstChild("HumanoidRootPart")
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if rootPart and humanoid then
+            -- Проверяем, есть ли земля под персонажем
+            local rayOrigin = rootPart.Position
+            local rayDirection = Vector3.new(0, -10, 0) -- Луч вниз на 10 метров
+            local raycastParams = RaycastParams.new()
+            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+            raycastParams.FilterDescendantsInstances = {char}
+            
+            local hit, position = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+            
+            if hit and position then
+                -- Если есть земля — опускаем персонаж на неё
+                local newPos = position + Vector3.new(0, 3, 0) -- +3, чтобы не провалиться
+                rootPart.CFrame = CFrame.new(newPos)
+                print("✅ Персонаж опущен на землю")
+            else
+                -- Если земли нет — опускаем вниз на 5 метров
+                rootPart.CFrame = rootPart.CFrame + Vector3.new(0, -5, 0)
+                print("⚠️ Земля не найдена, опущен на 5 метров")
+            end
+            
+            -- Сбрасываем скорость, чтобы персонаж не улетел
+            rootPart.Velocity = Vector3.new(0, 0, 0)
+            rootPart.RotVelocity = Vector3.new(0, 0, 0)
+            
+            -- Возвращаем нормальную гравитацию
+            humanoid.PlatformStand = false
+            humanoid.UseJumpPower = true
         end
     end
     
@@ -298,7 +330,6 @@ local function toggleNoclip()
     else
         enableNoclip()
     end
-    -- ❌ УБИРАЕМ NoclipToggle:Set(noclipEnabled) ОТСЮДА
 end
 
 local NoclipToggle = Tab:CreateToggle({
@@ -312,7 +343,6 @@ local NoclipToggle = Tab:CreateToggle({
         else
             disableNoclip()
         end
-        -- ❌ УБИРАЕМ NoclipToggle:Set(noclipEnabled) ОТСЮДА
     end,
 })
 
@@ -345,7 +375,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == FlyKeybind.CurrentKeybind then
         toggleFly()
-        FlyToggle:Set(flying)  -- 👈 СИНХРОНИЗАЦИЯ ЗДЕСЬ
+        FlyToggle:Set(flying)
         print("🔑 Клавиша полета нажата, flying:", flying)
     end
 end)
@@ -355,7 +385,7 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == NoclipKeybind.CurrentKeybind then
         toggleNoclip()
-        NoclipToggle:Set(noclipEnabled)  -- 👈 СИНХРОНИЗАЦИЯ ЗДЕСЬ
+        NoclipToggle:Set(noclipEnabled)
         print("🔑 Клавиша Noclip нажата, noclipEnabled:", noclipEnabled)
     end
 end)

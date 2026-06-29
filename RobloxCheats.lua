@@ -188,6 +188,20 @@ local function disableFly()
             humanoid.PlatformStand = false
             humanoid.UseJumpPower = true
         end
+        
+        -- Принудительно опускаем персонаж на землю
+        local rootPart = char:FindFirstChild("HumanoidRootPart")
+        if rootPart and humanoid then
+            -- Отключаем гравитацию на мгновение, чтобы персонаж упал
+            humanoid.PlatformStand = true
+            task.wait(0.1)
+            humanoid.PlatformStand = false
+            humanoid.UseJumpPower = true
+            
+            -- Сбрасываем скорость и толкаем вниз
+            rootPart.Velocity = Vector3.new(0, -10, 0)
+            rootPart.RotVelocity = Vector3.new(0, 0, 0)
+        end
     end
     
     if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
@@ -243,13 +257,12 @@ local FlyKeybind = Tab:CreateKeybind({
 })
 
 -- ============================================
--- СЕКЦИЯ: НАСТРОЙКИ NOCLIP (ПРОСТАЯ ВЕРСИЯ)
+-- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
 -- ============================================
 local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
 local noclipEnabled = false
 local noclipConnection = nil
-local noclipBodyVelocity = nil
 
 local function enableNoclip()
     if noclipEnabled then return end
@@ -263,15 +276,6 @@ local function enableNoclip()
         if part:IsA("BasePart") then
             part.CanCollide = false
         end
-    end
-    
-    -- Создаем BodyVelocity, чтобы персонаж не падал сквозь пол (опционально)
-    local rootPart = char:FindFirstChild("HumanoidRootPart")
-    if rootPart then
-        noclipBodyVelocity = Instance.new("BodyVelocity")
-        noclipBodyVelocity.MaxForce = Vector3.new(0, 0, 0)
-        noclipBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        noclipBodyVelocity.Parent = rootPart
     end
     
     print("✅ Noclip ВКЛЮЧЕН")
@@ -290,26 +294,24 @@ local function disableNoclip()
             end
         end
         
-        -- Опускаем персонаж на землю
-        local rootPart = char:FindFirstChild("HumanoidRootPart")
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if rootPart and humanoid then
-            -- Отключаем гравитацию на мгновение, чтобы персонаж упал
-            humanoid.PlatformStand = true
-            task.wait(0.1)
-            humanoid.PlatformStand = false
-            humanoid.UseJumpPower = true
-            
-            -- Сбрасываем скорость
-            rootPart.Velocity = Vector3.new(0, -10, 0) -- Толкаем вниз
-            rootPart.RotVelocity = Vector3.new(0, 0, 0)
+        -- Если полёт выключен — опускаем персонаж на землю
+        if not flying then
+            local rootPart = char:FindFirstChild("HumanoidRootPart")
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if rootPart and humanoid then
+                -- Отключаем гравитацию на мгновение, чтобы персонаж упал
+                humanoid.PlatformStand = true
+                task.wait(0.1)
+                humanoid.PlatformStand = false
+                humanoid.UseJumpPower = true
+                
+                -- Сбрасываем скорость и толкаем вниз
+                rootPart.Velocity = Vector3.new(0, -10, 0)
+                rootPart.RotVelocity = Vector3.new(0, 0, 0)
+            end
+        else
+            print("ℹ️ Полёт включён, опускание отключено")
         end
-    end
-    
-    -- Удаляем BodyVelocity
-    if noclipBodyVelocity then
-        noclipBodyVelocity:Destroy()
-        noclipBodyVelocity = nil
     end
     
     print("❌ Noclip ВЫКЛЮЧЕН")
@@ -351,7 +353,7 @@ local NoclipKeybind = Tab:CreateKeybind({
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = Tab:CreateButton({
-    Name = "Тест кнопка",
+    Name = "1Тест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

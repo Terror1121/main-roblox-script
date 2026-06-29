@@ -12,8 +12,8 @@ local Window = Rayfield:CreateWindow({
 
 -- 3. Создаем вкладки
 local Tab = Window:CreateTab("Игрок", "user-round")
+local TabESP = Window:CreateTab("ESP", "scan-eye")
 local TabPr = Window:CreateTab("Прочее", "wrench")
-local TabESP = Window:CreateTab("ESP", "eye")
 
 -- ============================================
 -- ПЕРЕМЕННЫЕ
@@ -651,7 +651,7 @@ end)
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
-    Name = "Тест кнопка",
+    Name = "Т1ест кнопка",
     Callback = function()
         print("РАБОТАЕТ!!!!!!!!!!!!!!")
     end,

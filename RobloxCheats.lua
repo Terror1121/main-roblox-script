@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd016",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd017",
 })
 
 -- ============================================
@@ -383,7 +383,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (BILLBOARDGUI ВЕРСИЯ)
+-- СЕКЦИЯ: ESP (РАБОЧАЯ ВЕРСИЯ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -404,7 +404,7 @@ local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
         if espData.nameBillboard then espData.nameBillboard:Destroy() end
-        if espData.boxBillboard then espData.boxBillboard:Destroy() end
+        if espData.box then espData.box:Destroy() end
         if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
     end
@@ -437,7 +437,7 @@ local function createESP(targetPlayer)
     local nameBillboard = Instance.new("BillboardGui")
     nameBillboard.Size = UDim2.new(0, 200, 0, 30)
     nameBillboard.Adornee = head or rootPart
-    nameBillboard.StudsOffset = Vector3.new(0, (head and 3.5 or 1), 0)
+    nameBillboard.StudsOffset = Vector3.new(0, (head and 3.5 or 1.5), 0)
     nameBillboard.AlwaysOnTop = true
     nameBillboard.ResetOnSpawn = false
     nameBillboard.Parent = char
@@ -454,30 +454,24 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС (BillboardGui с рамкой)
-    local boxBillboard = Instance.new("BillboardGui")
-    boxBillboard.Size = UDim2.new(0, 3, 0, 5)
-    boxBillboard.Adornee = rootPart
-    boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
-    boxBillboard.AlwaysOnTop = true
-    boxBillboard.ResetOnSpawn = false
-    boxBillboard.Parent = char
-    boxBillboard.Enabled = espEnabled and espSettings.showBox
-    
-    local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(1, 0, 1, 0)
-    boxFrame.BackgroundTransparency = 1
-    boxFrame.BorderSizePixel = 3
-    boxFrame.BorderColor3 = espSettings.boxColor
-    boxFrame.Parent = boxBillboard
-    espData.boxFrame = boxFrame
-    espData.boxBillboard = boxBillboard
+    -- БОКС (BoxHandleAdornment - 3D рамка)
+    local box = Instance.new("BoxHandleAdornment")
+    box.Size = Vector3.new(3, 5, 3)
+    box.Color3 = espSettings.boxColor
+    box.Transparency = 0.5
+    box.LineThickness = 0.1
+    box.ZIndex = 0
+    box.AlwaysOnTop = true
+    box.Adornee = rootPart
+    box.Parent = char
+    box.Visible = espEnabled and espSettings.showBox
+    espData.box = box
     
     -- ЗДОРОВЬЕ (BillboardGui)
     local healthBillboard = Instance.new("BillboardGui")
     healthBillboard.Size = UDim2.new(0, 3, 0, 0.3)
-    healthBillboard.Adornee = head or rootPart
-    healthBillboard.StudsOffset = Vector3.new(0, (head and 2.5 or 0.5), 0)
+    healthBillboard.Adornee = rootPart
+    healthBillboard.StudsOffset = Vector3.new(0, -2, 0)
     healthBillboard.AlwaysOnTop = true
     healthBillboard.ResetOnSpawn = false
     healthBillboard.Parent = char
@@ -486,7 +480,7 @@ local function createESP(targetPlayer)
     local healthBg = Instance.new("Frame")
     healthBg.Size = UDim2.new(1, 0, 1, 0)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    healthBg.BackgroundTransparency = 0.4
+    healthBg.BackgroundTransparency = 0.3
     healthBg.BorderSizePixel = 0
     healthBg.Parent = healthBillboard
     
@@ -551,8 +545,9 @@ local function updateESPSettings()
             espData.nameLabel.TextColor3 = espSettings.nameColor
             espData.nameLabel.TextSize = espSettings.nameSize
         end
-        if espData.boxFrame then
-            espData.boxFrame.BorderColor3 = espSettings.boxColor
+        if espData.box then
+            espData.box.Color3 = espSettings.boxColor
+            espData.box.Visible = espEnabled and espSettings.showBox
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor

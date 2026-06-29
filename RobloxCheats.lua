@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd014",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-upd015",
 })
 
 -- ============================================
@@ -383,7 +383,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (ПОЛНОСТЬЮ ПЕРЕДЕЛАННАЯ)
+-- СЕКЦИЯ: ESP (С НУЛЯ, РАБОТАЮЩАЯ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -452,7 +452,6 @@ local function createESP(targetPlayer)
     nameLabel.TextColor3 = espSettings.nameColor
     nameLabel.TextSize = espSettings.nameSize
     nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextScaled = false
     nameLabel.Visible = false
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
@@ -469,9 +468,9 @@ local function createESP(targetPlayer)
     
     -- Здоровье
     local healthBg = Instance.new("Frame")
-    healthBg.Size = UDim2.new(0, 80, 0, 10)
+    healthBg.Size = UDim2.new(0, 80, 0, 8)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    healthBg.BackgroundTransparency = 0.5
+    healthBg.BackgroundTransparency = 0.4
     healthBg.BorderSizePixel = 1
     healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
     healthBg.Visible = false
@@ -525,37 +524,38 @@ local function createESP(targetPlayer)
         local playerWidth = playerHeight * 0.4
         local boxSize = math.max(playerWidth, 50)
         local boxHeight = math.max(playerHeight, 70)
+        local healthWidth = boxSize * 0.9
         
-        -- ИМЯ
+        -- ИМЯ (над головой, на 45 пикселей выше)
         if espSettings.showName and nameLabel then
             nameLabel.Visible = true
-            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 40)
+            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 45)
             nameLabel.TextColor3 = espSettings.nameColor
             nameLabel.TextSize = espSettings.nameSize
         else
             if nameLabel then nameLabel.Visible = false end
         end
         
-        -- БОКС
+        -- БОКС (от головы до ног)
         if espSettings.showBox and boxFrame then
             boxFrame.Visible = true
             boxFrame.Size = UDim2.new(0, boxSize, 0, boxHeight)
-            boxFrame.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 5)
+            boxFrame.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 10)
             boxFrame.BorderColor3 = espSettings.boxColor
             boxFrame.BorderSizePixel = 3
         else
             if boxFrame then boxFrame.Visible = false end
         end
         
-        -- ЗДОРОВЬЕ
+        -- ЗДОРОВЬЕ (под ником, над головой, на 30 пикселей выше головы)
         if espSettings.showHealth and humanoid and healthBg and healthBar then
             local health = humanoid.Health
             local maxHealth = humanoid.MaxHealth
             local percent = math.clamp(health / maxHealth, 0, 1)
             
             healthBg.Visible = true
-            healthBg.Size = UDim2.new(0, boxSize, 0, 10)
-            healthBg.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 25)
+            healthBg.Size = UDim2.new(0, healthWidth, 0, 8)
+            healthBg.Position = UDim2.new(0, rootPos.X - healthWidth/2, 0, headPos.Y - 30)
             healthBar.Size = UDim2.new(percent, 0, 1, 0)
             healthBar.BackgroundColor3 = espSettings.healthColor
         else
@@ -598,6 +598,10 @@ local function updateESPSettings()
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor
+            local healthBg = espData.healthBar.Parent
+            if healthBg then
+                healthBg.Size = UDim2.new(0, espSettings.healthSize * 30, 0, espSettings.healthSize * 3)
+            end
         end
     end
 end

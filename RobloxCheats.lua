@@ -13,7 +13,7 @@ local Window = Rayfield:CreateWindow({
 -- 3. Создаем вкладки
 local TabInf = Window:CreateTab("Информация", "info")
 local Tab = Window:CreateTab("Игрок", "user-round")
-local TabESP = Window:CreateTab("ESP", "scan-eye")
+local TabVisuals = Window:CreateTab("Визуал", "scan-eye") -- 👈 ПЕРЕИМЕНОВАНО
 local TabPr = Window:CreateTab("Прочее", "wrench")
 
 -- ============================================
@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch029",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch030",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (СКЕЛЕТ - R15 + R6)
+-- СЕКЦИЯ: ВИЗУАЛ (СКЕЛЕТ - R15 + R6)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -382,16 +382,15 @@ local espGui = nil
 
 local espSettings = {
     showName = true,
-    showBox = true,
+    showSkeleton = true,  -- 👈 ПЕРЕИМЕНОВАНО
     showHealth = true,
     nameColor = Color3.fromRGB(255, 255, 255),
-    boxColor = Color3.fromRGB(0, 255, 255),
+    skeletonColor = Color3.fromRGB(0, 255, 255),  -- 👈 ПЕРЕИМЕНОВАНО
     healthColor = Color3.fromRGB(0, 255, 0),
     nameSize = 20,
-    healthSize = 3,
 }
 
--- MAPPING для R6 (какие части тела соответствуют R15)
+-- MAPPING для R6
 local R6_MAPPING = {
     ["UpperTorso"] = "Torso",
     ["LowerTorso"] = "Torso",
@@ -409,7 +408,7 @@ local R6_MAPPING = {
     ["RightFoot"] = "Right Leg",
 }
 
--- СОЕДИНЕНИЯ (используем R15 названия, но через маппинг)
+-- СОЕДИНЕНИЯ
 local SKELETON_CONNECTIONS = {
     {"Head", "UpperTorso"},
     {"UpperTorso", "LowerTorso"},
@@ -430,7 +429,7 @@ local SKELETON_CONNECTIONS = {
 local function createESPGui()
     if espGui then return end
     espGui = Instance.new("ScreenGui")
-    espGui.Name = "ESPGui"
+    espGui.Name = "VisualsGui"
     espGui.Parent = game.CoreGui
     espGui.ResetOnSpawn = false
     espGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -442,9 +441,12 @@ local function removeESP(targetPlayer)
     if espData then
         if espData.nameLabel then espData.nameLabel:Destroy() end
         if espData.lines then
-            for _, line in ipairs(espData.lines) do
-                line:Destroy()
+            for _, lineData in ipairs(espData.lines) do
+                if lineData and lineData.frame then
+                    lineData.frame:Destroy()
+                end
             end
+            espData.lines = nil
         end
         if espData.healthBg then espData.healthBg:Destroy() end
         if espData.healthBar then espData.healthBar:Destroy() end
@@ -468,18 +470,15 @@ local function clearAllESP()
 end
 
 local function getPart(char, r15Name)
-    -- Сначала ищем R15 часть
     local part = char:FindFirstChild(r15Name)
     if part then return part end
     
-    -- Если не нашли, ищем по маппингу для R6
     local r6Name = R6_MAPPING[r15Name]
     if r6Name then
         part = char:FindFirstChild(r6Name)
         if part then return part end
     end
     
-    -- Если всё равно не нашли, пробуем найти любую часть с похожим именем
     for _, child in ipairs(char:GetChildren()) do
         if child:IsA("BasePart") then
             local name = child.Name:lower()
@@ -518,7 +517,7 @@ local function createESP(targetPlayer)
     for _, connection in ipairs(SKELETON_CONNECTIONS) do
         local line = Instance.new("Frame")
         line.Size = UDim2.new(0, 1, 0, 3)
-        line.BackgroundColor3 = espSettings.boxColor
+        line.BackgroundColor3 = espSettings.skeletonColor
         line.BackgroundTransparency = 0
         line.BorderSizePixel = 0
         line.Visible = false
@@ -597,7 +596,7 @@ local function createESP(targetPlayer)
                         data.frame.Position = UDim2.new(0, (x1 + x2) / 2 - distance/2, 0, (y1 + y2) / 2 - 1.5)
                         data.frame.Rotation = math.deg(math.atan2(dy, dx))
                         data.frame.Visible = true
-                        data.frame.BackgroundColor3 = espSettings.boxColor
+                        data.frame.BackgroundColor3 = espSettings.skeletonColor
                         data.frame.BackgroundTransparency = 0
                     else
                         data.frame.Visible = false
@@ -673,7 +672,7 @@ local function toggleESP(state)
     end
 end
 
-local function updateESPSettings()
+local function updateVisualsSettings()
     for _, espData in pairs(espObjects) do
         if espData.nameLabel then
             espData.nameLabel.TextColor3 = espSettings.nameColor
@@ -681,7 +680,7 @@ local function updateESPSettings()
         end
         if espData.lines then
             for _, data in ipairs(espData.lines) do
-                data.frame.BackgroundColor3 = espSettings.boxColor
+                data.frame.BackgroundColor3 = espSettings.skeletonColor
                 data.frame.BackgroundTransparency = 0
             end
         end
@@ -725,114 +724,108 @@ for _, targetPlayer in ipairs(Players:GetPlayers()) do
 end
 
 -- ============================================
--- ИНТЕРФЕЙС ESP В МЕНЮ
+-- ИНТЕРФЕЙС ВИЗУАЛ В МЕНЮ
 -- ============================================
 
-local SectionESP = TabESP:CreateSection("Настройки ESP")
+local SectionVisuals = TabVisuals:CreateSection("Настройки визуала")
 
-local ESPToggle = TabESP:CreateToggle({
+local ESPToggle = TabVisuals:CreateToggle({
     Name = "Включить ESP",
     CurrentValue = false,
     Flag = "ESPToggle",
-    Info = "Включает/выключает ESP\nПоказывает имена, боксы и здоровье всех игроков",
+    Info = "Включает/выключает ESP\nПоказывает имена, скелет и здоровье всех игроков",
     Callback = function(Value)
         toggleESP(Value)
     end,
 })
 
-local NameColorPicker = TabESP:CreateColorPicker({
+local NameColorPicker = TabVisuals:CreateColorPicker({
     Name = "Цвет ника",
     Color = Color3.fromRGB(255, 255, 255),
-    Flag = "ESPNameColor",
+    Flag = "VisualNameColor",
     Info = "Выбери цвет для имени игрока",
     Callback = function(Color)
         espSettings.nameColor = Color
-        updateESPSettings()
+        updateVisualsSettings()
     end,
 })
 
-local BoxColorPicker = TabESP:CreateColorPicker({
-    Name = "Цвет бокса",
+local SkeletonColorPicker = TabVisuals:CreateColorPicker({
+    Name = "Цвет скелета",  -- 👈 ПЕРЕИМЕНОВАНО
     Color = Color3.fromRGB(0, 255, 255),
-    Flag = "ESPBoxColor",
-    Info = "Выбери цвет для рамки вокруг игрока",
+    Flag = "VisualSkeletonColor",
+    Info = "Выбери цвет для скелета игрока",
     Callback = function(Color)
-        espSettings.boxColor = Color
-        updateESPSettings()
+        espSettings.skeletonColor = Color
+        updateVisualsSettings()
     end,
 })
 
-local HealthColorPicker = TabESP:CreateColorPicker({
+local HealthColorPicker = TabVisuals:CreateColorPicker({
     Name = "Цвет здоровья",
     Color = Color3.fromRGB(0, 255, 0),
-    Flag = "ESPHealthColor",
+    Flag = "VisualHealthColor",
     Info = "Выбери цвет для полоски здоровья",
     Callback = function(Color)
         espSettings.healthColor = Color
-        updateESPSettings()
+        updateVisualsSettings()
     end,
 })
 
-local NameToggle = TabESP:CreateToggle({
+local NameToggle = TabVisuals:CreateToggle({
     Name = "Показывать имена",
     CurrentValue = true,
-    Flag = "ESPNameToggle",
+    Flag = "VisualNameToggle",
     Info = "Показывает имя игрока над головой",
     Callback = function(Value)
         espSettings.showName = Value
-        updateESPSettings()
+        updateVisualsSettings()
     end,
 })
 
-local BoxToggle = TabESP:CreateToggle({
-    Name = "Показывать бокс",
+local SkeletonToggle = TabVisuals:CreateToggle({
+    Name = "Показывать скелет",  -- 👈 ПЕРЕИМЕНОВАНО
     CurrentValue = true,
-    Flag = "ESPBoxToggle",
-    Info = "Показывает рамку вокруг игрока",
+    Flag = "VisualSkeletonToggle",
+    Info = "Показывает скелет игрока (контур)",
     Callback = function(Value)
-        espSettings.showBox = Value
-        updateESPSettings()
+        espSettings.showSkeleton = Value
+        -- Применяем изменение к уже существующим объектам
+        for _, espData in pairs(espObjects) do
+            if espData.lines then
+                for _, data in ipairs(espData.lines) do
+                    data.frame.Visible = espEnabled and Value
+                end
+            end
+        end
     end,
 })
 
-local HealthToggle = TabESP:CreateToggle({
+local HealthToggle = TabVisuals:CreateToggle({
     Name = "Показывать здоровье",
     CurrentValue = true,
-    Flag = "ESPHealthToggle",
+    Flag = "VisualHealthToggle",
     Info = "Показывает полоску здоровья над игроком",
     Callback = function(Value)
         espSettings.showHealth = Value
-        updateESPSettings()
+        updateVisualsSettings()
     end,
 })
 
-local NameSizeSlider = TabESP:CreateSlider({
+local NameSizeSlider = TabVisuals:CreateSlider({
     Name = "Размер ника",
     Range = {10, 40},
     Increment = 1,
     Suffix = "",
     CurrentValue = 20,
-    Flag = "ESPNameSize",
+    Flag = "VisualNameSize",
     Info = "Регулирует размер имени",
     Callback = function(Value)
         espSettings.nameSize = Value
-        updateESPSettings()
+        updateVisualsSettings()
     end,
 })
-
-local HealthSizeSlider = TabESP:CreateSlider({
-    Name = "Размер здоровья",
-    Range = {1, 5},
-    Increment = 0.5,
-    Suffix = "",
-    CurrentValue = 3,
-    Flag = "ESPHealthSize",
-    Info = "Регулирует размер полоски здоровья",
-    Callback = function(Value)
-        espSettings.healthSize = Value
-        updateESPSettings()
-    end,
-})
+-- 👇 УДАЛЕН ПОЛЗУНОК РАЗМЕРА ЗДОРОВЬЯ
 
 -- ============================================
 -- ТЕСТОВАЯ КНОПКА
@@ -904,4 +897,4 @@ print("⚙️ Настрой скорость через ползунок, вк�
 print("🪁 Полет: включи через переключатель или нажми " .. FlyKeybind.CurrentKeybind)
 print("🧱 Noclip: включи через переключатель или нажми " .. NoclipKeybind.CurrentKeybind)
 print("🦘 Бесконечный прыжок: включи через переключатель")
-print("👁️ ESP: включи через переключатель во вкладке ESP")
+print("👁️ Визуал: включи через переключатель во вкладке Визуал")

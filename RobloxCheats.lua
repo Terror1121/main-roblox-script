@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch036",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch037",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ВИЗУАЛ (УНИВЕРСАЛЬНЫЙ СКЕЛЕТ)
+-- СЕКЦИЯ: ВИЗУАЛ (БЫСТРАЯ ВЕРСИЯ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -390,59 +390,32 @@ local espSettings = {
     nameSize = 14,
 }
 
--- УНИВЕРСАЛЬНЫЙ ПОИСК ЧАСТЕЙ ТЕЛА
-local function findParts(char)
-    local parts = {}
-    
-    for _, child in ipairs(char:GetDescendants()) do
-        if child:IsA("BasePart") then
-            local name = child.Name:lower()
-            parts[name] = child
-            if name:find("head") then parts.head = child end
-            if name:find("torso") or name:find("upper") or name:find("lower") then
-                parts.torso = child
-            end
-            if name:find("arm") or name:find("hand") then
-                if name:find("left") then parts.leftArm = child end
-                if name:find("right") then parts.rightArm = child end
-            end
-            if name:find("leg") or name:find("foot") then
-                if name:find("left") then parts.leftLeg = child end
-                if name:find("right") then parts.rightLeg = child end
-            end
-        end
-    end
-    
-    return parts
-end
+-- БЫСТРЫЙ МАППИНГ
+local R6_MAPPING = {
+    ["UpperTorso"] = {"Torso", "UpperTorso", "HumanoidRootPart"},
+    ["LowerTorso"] = {"Torso", "LowerTorso", "HumanoidRootPart"},
+    ["LeftUpperArm"] = {"Left Arm", "LeftUpperArm"},
+    ["LeftLowerArm"] = {"Left Arm", "LeftLowerArm"},
+    ["LeftHand"] = {"Left Arm", "LeftHand"},
+    ["RightUpperArm"] = {"Right Arm", "RightUpperArm"},
+    ["RightLowerArm"] = {"Right Arm", "RightLowerArm"},
+    ["RightHand"] = {"Right Arm", "RightHand"},
+    ["LeftUpperLeg"] = {"Left Leg", "LeftUpperLeg"},
+    ["LeftLowerLeg"] = {"Left Leg", "LeftLowerLeg"},
+    ["LeftFoot"] = {"Left Leg", "LeftFoot"},
+    ["RightUpperLeg"] = {"Right Leg", "RightUpperLeg"},
+    ["RightLowerLeg"] = {"Right Leg", "RightLowerLeg"},
+    ["RightFoot"] = {"Right Leg", "RightFoot"},
+    ["Head"] = {"Head"},
+}
 
-local function getPartUniversal(char, r15Name)
-    local parts = findParts(char)
-    local search = r15Name:lower()
-    
-    if search:find("head") then
-        return parts.head or parts["head"] or char:FindFirstChild("Head")
-    elseif search:find("upper") or search:find("torso") then
-        local torso = parts.torso or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-        if torso then return torso end
-        return char:FindFirstChild("HumanoidRootPart")
-    elseif search:find("lower") then
-        return parts.torso or char:FindFirstChild("LowerTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart")
-    elseif search:find("arm") or search:find("hand") then
-        if search:find("left") then
-            return parts.leftArm or char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm") or char:FindFirstChild("LeftArm")
-        elseif search:find("right") then
-            return parts.rightArm or char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm") or char:FindFirstChild("RightArm")
-        end
-    elseif search:find("leg") or search:find("foot") then
-        if search:find("left") then
-            return parts.leftLeg or char:FindFirstChild("LeftUpperLeg") or char:FindFirstChild("Left Leg") or char:FindFirstChild("LeftLeg")
-        elseif search:find("right") then
-            return parts.rightLeg or char:FindFirstChild("RightUpperLeg") or char:FindFirstChild("Right Leg") or char:FindFirstChild("RightLeg")
-        end
+local function getPart(char, r15Name)
+    local possibleNames = R6_MAPPING[r15Name] or {r15Name}
+    for _, name in ipairs(possibleNames) do
+        local part = char:FindFirstChild(name)
+        if part then return part end
     end
-    
-    return char:FindFirstChild(r15Name)
+    return nil
 end
 
 local SKELETON_CONNECTIONS = {
@@ -514,6 +487,7 @@ local function createESP(targetPlayer)
     local espData = {}
     local lines = {}
     
+    -- ИМЯ
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0, 200, 0, 30)
     nameLabel.BackgroundTransparency = 1
@@ -525,6 +499,7 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
+    -- ЛИНИИ
     for _, connection in ipairs(SKELETON_CONNECTIONS) do
         local line = Instance.new("Frame")
         line.Size = UDim2.new(0, 1, 0, 3)
@@ -541,6 +516,7 @@ local function createESP(targetPlayer)
     end
     espData.lines = lines
     
+    -- ЗДОРОВЬЕ
     local healthBg = Instance.new("Frame")
     healthBg.Size = UDim2.new(0, 80, 0, 10)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -561,7 +537,7 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
-    local function updateESP()
+    local connection = runService.RenderStepped:Connect(function()
         if not espEnabled then
             nameLabel.Visible = false
             for _, data in ipairs(lines) do
@@ -585,8 +561,8 @@ local function createESP(targetPlayer)
         if not camera then return end
         
         for _, data in ipairs(lines) do
-            local part1 = getPartUniversal(char, data.part1)
-            local part2 = getPartUniversal(char, data.part2)
+            local part1 = getPart(char, data.part1)
+            local part2 = getPart(char, data.part2)
             
             if part1 and part2 then
                 local pos1, onScreen1 = camera:WorldToScreenPoint(part1.Position)
@@ -619,8 +595,7 @@ local function createESP(targetPlayer)
         end
         
         local rootPart = char:FindFirstChild("HumanoidRootPart")
-        local head = getPartUniversal(char, "Head")
-        
+        local head = getPart(char, "Head")
         if rootPart then
             local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2.5, 0))
             if headOnScreen then
@@ -654,19 +629,15 @@ local function createESP(targetPlayer)
         else
             healthBg.Visible = false
         end
-    end
+    end)
     
-    local connection = runService.RenderStepped:Connect(updateESP)
     table.insert(espConnections, connection)
     
-    local characterAddedConnection
-    characterAddedConnection = targetPlayer.CharacterAdded:Connect(function()
+    targetPlayer.CharacterAdded:Connect(function()
         if espEnabled then
             task.wait(0.1)
-            updateESP()
         end
     end)
-    table.insert(espConnections, characterAddedConnection)
     
     return espData
 end

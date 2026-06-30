@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch027",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch028",
 })
 
 -- ============================================
@@ -373,11 +373,12 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (СКЕЛЕТНЫЙ - ИДЕАЛЬНЫЙ КОНТУР)
+-- СЕКЦИЯ: ESP (2D-СКЕЛЕТ СКВОЗЬ СТЕНЫ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
 local espObjects = {}
+local espGui = nil
 
 local espSettings = {
     showName = true,
@@ -390,16 +391,6 @@ local espSettings = {
     healthSize = 3,
 }
 
--- ЧАСТИ ТЕЛА ДЛЯ СКЕЛЕТА
-local BODY_PARTS = {
-    "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart",
-    "LeftUpperArm", "LeftLowerArm", "LeftHand",
-    "RightUpperArm", "RightLowerArm", "RightHand",
-    "LeftUpperLeg", "LeftLowerLeg", "LeftFoot",
-    "RightUpperLeg", "RightLowerLeg", "RightFoot"
-}
-
--- СОЕДИНЕНИЯ МЕЖДУ ЧАСТЯМИ (скелет)
 local SKELETON_CONNECTIONS = {
     {"Head", "UpperTorso"},
     {"UpperTorso", "LowerTorso"},
@@ -417,12 +408,27 @@ local SKELETON_CONNECTIONS = {
     {"RightLowerLeg", "RightFoot"},
 }
 
+local function createESPGui()
+    if espGui then return end
+    espGui = Instance.new("ScreenGui")
+    espGui.Name = "ESPGui"
+    espGui.Parent = game.CoreGui
+    espGui.ResetOnSpawn = false
+    espGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    espGui.DisplayOrder = 999
+end
+
 local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
-        if espData.nameBillboard then espData.nameBillboard:Destroy() end
-        if espData.skeletonGui then espData.skeletonGui:Destroy() end
-        if espData.healthBillboard then espData.healthBillboard:Destroy() end
+        if espData.nameLabel then espData.nameLabel:Destroy() end
+        if espData.lines then
+            for _, line in ipairs(espData.lines) do
+                line:Destroy()
+            end
+        end
+        if espData.healthBg then espData.healthBg:Destroy() end
+        if espData.healthBar then espData.healthBar:Destroy() end
         espObjects[targetPlayer] = nil
     end
 end
@@ -436,67 +442,9 @@ local function clearAllESP()
         removeESP(targetPlayer)
     end
     espObjects = {}
-end
-
-local function createSkeletonGui(char)
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "SkeletonGui"
-    gui.Parent = char
-    gui.ResetOnSpawn = false
-    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    gui.DisplayOrder = 999
-    gui.Enabled = false
-    
-    local lines = {}
-    for _, connection in ipairs(SKELETON_CONNECTIONS) do
-        local line = Instance.new("Frame")
-        line.Size = UDim2.new(0, 1, 0, 1)
-        line.BackgroundColor3 = espSettings.boxColor
-        line.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ!
-        line.BorderSizePixel = 0
-        line.Visible = false
-        line.Parent = gui
-        table.insert(lines, {frame = line, part1 = connection[1], part2 = connection[2]})
-    end
-    
-    return gui, lines
-end
-
-local function updateSkeleton(char, lines, color, camera)
-    local viewportSize = camera.ViewportSize
-    
-    for _, data in ipairs(lines) do
-        local part1 = char:FindFirstChild(data.part1)
-        local part2 = char:FindFirstChild(data.part2)
-        
-        if part1 and part2 then
-            local pos1, onScreen1 = camera:WorldToScreenPoint(part1.Position)
-            local pos2, onScreen2 = camera:WorldToScreenPoint(part2.Position)
-            
-            if onScreen1 and onScreen2 then
-                local x1, y1 = pos1.X, pos1.Y
-                local x2, y2 = pos2.X, pos2.Y
-                
-                local dx = x2 - x1
-                local dy = y2 - y1
-                local distance = math.sqrt(dx*dx + dy*dy)
-                
-                if distance > 0 then
-                    data.frame.Size = UDim2.new(0, distance, 0, 3)  -- 👈 Толщина 3
-                    data.frame.Position = UDim2.new(0, (x1 + x2) / 2 - distance/2, 0, (y1 + y2) / 2 - 1.5)
-                    data.frame.Rotation = math.deg(math.atan2(dy, dx))
-                    data.frame.Visible = true
-                    data.frame.BackgroundColor3 = color
-                    data.frame.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ!
-                else
-                    data.frame.Visible = false
-                end
-            else
-                data.frame.Visible = false
-            end
-        else
-            data.frame.Visible = false
-        end
+    if espGui then
+        espGui:Destroy()
+        espGui = nil
     end
 end
 
@@ -504,110 +452,156 @@ local function createESP(targetPlayer)
     if targetPlayer == player then return end
     if espObjects[targetPlayer] then return end
     
-    local char = targetPlayer.Character
-    if not char then return end
-    
-    local head = char:FindFirstChild("Head")
-    local rootPart = char:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return end
+    createESPGui()
     
     local espData = {}
+    local lines = {}
     
     -- ИМЯ
-    local nameBillboard = Instance.new("BillboardGui")
-    nameBillboard.Size = UDim2.new(0, 200, 0, 30)
-    nameBillboard.Adornee = head or rootPart
-    nameBillboard.StudsOffset = Vector3.new(0, (head and 3.5 or 1.5), 0)
-    nameBillboard.AlwaysOnTop = true
-    nameBillboard.ResetOnSpawn = false
-    nameBillboard.Parent = char
-    nameBillboard.Enabled = espEnabled and espSettings.showName
-    
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
+    nameLabel.Size = UDim2.new(0, 200, 0, 30)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = targetPlayer.Name
     nameLabel.TextColor3 = espSettings.nameColor
     nameLabel.TextSize = espSettings.nameSize
     nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.Parent = nameBillboard
+    nameLabel.Visible = false
+    nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
-    espData.nameBillboard = nameBillboard
     
-    -- СКЕЛЕТ
-    local skeletonGui, skeletonLines = createSkeletonGui(char)
-    espData.skeletonGui = skeletonGui
-    espData.skeletonLines = skeletonLines
+    -- ЛИНИИ СКЕЛЕТА (НЕПРОЗРАЧНЫЕ)
+    for _, connection in ipairs(SKELETON_CONNECTIONS) do
+        local line = Instance.new("Frame")
+        line.Size = UDim2.new(0, 1, 0, 3)
+        line.BackgroundColor3 = espSettings.boxColor
+        line.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+        line.BorderSizePixel = 0
+        line.Visible = false
+        line.Parent = espGui
+        table.insert(lines, {frame = line, part1 = connection[1], part2 = connection[2]})
+    end
+    espData.lines = lines
     
-    local skeletonConnection = runService.RenderStepped:Connect(function()
-        if not espEnabled or not espSettings.showBox then
-            if skeletonGui then skeletonGui.Enabled = false end
+    -- ЗДОРОВЬЕ
+    local healthBg = Instance.new("Frame")
+    healthBg.Size = UDim2.new(0, 80, 0, 10)
+    healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    healthBg.BackgroundTransparency = 0.4
+    healthBg.BorderSizePixel = 1
+    healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    healthBg.Visible = false
+    healthBg.Parent = espGui
+    espData.healthBg = healthBg
+    
+    local healthBar = Instance.new("Frame")
+    healthBar.Size = UDim2.new(1, 0, 1, 0)
+    healthBar.BackgroundColor3 = espSettings.healthColor
+    healthBar.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+    healthBar.BorderSizePixel = 0
+    healthBar.Parent = healthBg
+    espData.healthBar = healthBar
+    
+    espObjects[targetPlayer] = espData
+    
+    local connection = runService.RenderStepped:Connect(function()
+        if not espEnabled then
+            nameLabel.Visible = false
+            for _, data in ipairs(lines) do
+                data.frame.Visible = false
+            end
+            healthBg.Visible = false
             return
         end
-        if skeletonGui then skeletonGui.Enabled = true end
         
         local char = targetPlayer.Character
         if not char then
-            if skeletonGui then skeletonGui.Enabled = false end
+            nameLabel.Visible = false
+            for _, data in ipairs(lines) do
+                data.frame.Visible = false
+            end
+            healthBg.Visible = false
             return
         end
         
         local camera = workspace.CurrentCamera
         if not camera then return end
         
-        updateSkeleton(char, skeletonLines, espSettings.boxColor, camera)
-    end)
-    table.insert(espConnections, skeletonConnection)
-    
-    -- ЗДОРОВЬЕ
-    local healthBillboard = Instance.new("BillboardGui")
-    healthBillboard.Size = UDim2.new(0, 100, 0, 10)
-    healthBillboard.Adornee = rootPart
-    healthBillboard.StudsOffset = Vector3.new(0, -2, 0)
-    healthBillboard.AlwaysOnTop = true
-    healthBillboard.ResetOnSpawn = false
-    healthBillboard.Parent = char
-    healthBillboard.Enabled = espEnabled and espSettings.showHealth
-    
-    local healthBg = Instance.new("Frame")
-    healthBg.Size = UDim2.new(1, 0, 1, 0)
-    healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    healthBg.BackgroundTransparency = 0.4
-    healthBg.BorderSizePixel = 1
-    healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    healthBg.Parent = healthBillboard
-    
-    local healthBar = Instance.new("Frame")
-    healthBar.Size = UDim2.new(1, 0, 1, 0)
-    healthBar.BackgroundColor3 = espSettings.healthColor
-    healthBar.BackgroundTransparency = 0
-    healthBar.BorderSizePixel = 0
-    healthBar.Parent = healthBg
-    espData.healthBar = healthBar
-    espData.healthBg = healthBg
-    espData.healthBillboard = healthBillboard
-    
-    espObjects[targetPlayer] = espData
-    
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        local healthConnection = runService.RenderStepped:Connect(function()
-            if not espEnabled or not espSettings.showHealth then
-                if healthBillboard then healthBillboard.Enabled = false end
-                return
+        -- Обновляем линии
+        for _, data in ipairs(lines) do
+            local part1 = char:FindFirstChild(data.part1)
+            local part2 = char:FindFirstChild(data.part2)
+            
+            if part1 and part2 then
+                local pos1, onScreen1 = camera:WorldToScreenPoint(part1.Position)
+                local pos2, onScreen2 = camera:WorldToScreenPoint(part2.Position)
+                
+                if onScreen1 and onScreen2 then
+                    local x1, y1 = pos1.X, pos1.Y
+                    local x2, y2 = pos2.X, pos2.Y
+                    
+                    local dx = x2 - x1
+                    local dy = y2 - y1
+                    local distance = math.sqrt(dx*dx + dy*dy)
+                    
+                    if distance > 0 then
+                        data.frame.Size = UDim2.new(0, distance, 0, 3)
+                        data.frame.Position = UDim2.new(0, (x1 + x2) / 2 - distance/2, 0, (y1 + y2) / 2 - 1.5)
+                        data.frame.Rotation = math.deg(math.atan2(dy, dx))
+                        data.frame.Visible = true
+                        data.frame.BackgroundColor3 = espSettings.boxColor
+                        data.frame.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+                    else
+                        data.frame.Visible = false
+                    end
+                else
+                    data.frame.Visible = false
+                end
+            else
+                data.frame.Visible = false
             end
-            if healthBillboard then healthBillboard.Enabled = true end
-            if humanoid and healthBar then
+        end
+        
+        -- ИМЯ
+        local rootPart = char:FindFirstChild("HumanoidRootPart")
+        local head = char:FindFirstChild("Head")
+        if rootPart then
+            local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2.5, 0))
+            if headOnScreen then
+                nameLabel.Visible = espSettings.showName
+                nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 40)
+                nameLabel.TextColor3 = espSettings.nameColor
+                nameLabel.TextSize = espSettings.nameSize
+            else
+                nameLabel.Visible = false
+            end
+        else
+            nameLabel.Visible = false
+        end
+        
+        -- ЗДОРОВЬЕ
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if espSettings.showHealth and humanoid and rootPart then
+            local rootPos, rootOnScreen = camera:WorldToScreenPoint(rootPart.Position)
+            if rootOnScreen then
                 local health = humanoid.Health
                 local maxHealth = humanoid.MaxHealth
                 local percent = math.clamp(health / maxHealth, 0, 1)
+                
+                healthBg.Visible = true
+                healthBg.Size = UDim2.new(0, 60, 0, 10)
+                healthBg.Position = UDim2.new(0, rootPos.X - 30, 0, rootPos.Y + 20)
                 healthBar.Size = UDim2.new(percent, 0, 1, 0)
                 healthBar.BackgroundColor3 = espSettings.healthColor
+                healthBar.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+            else
+                healthBg.Visible = false
             end
-        end)
-        table.insert(espConnections, healthConnection)
-    end
+        else
+            healthBg.Visible = false
+        end
+    end)
     
+    table.insert(espConnections, connection)
     return espData
 end
 
@@ -636,21 +630,16 @@ local function updateESPSettings()
         if espData.nameLabel then
             espData.nameLabel.TextColor3 = espSettings.nameColor
             espData.nameLabel.TextSize = espSettings.nameSize
-            if espData.nameBillboard then
-                espData.nameBillboard.Enabled = espEnabled and espSettings.showName
-            end
         end
-        if espData.skeletonLines then
-            for _, data in ipairs(espData.skeletonLines) do
+        if espData.lines then
+            for _, data in ipairs(espData.lines) do
                 data.frame.BackgroundColor3 = espSettings.boxColor
-                data.frame.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ!
+                data.frame.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
             end
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor
-            if espData.healthBillboard then
-                espData.healthBillboard.Enabled = espEnabled and espSettings.showHealth
-            end
+            espData.healthBar.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
         end
     end
 end

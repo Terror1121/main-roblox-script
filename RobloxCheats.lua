@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch011",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch012",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (С НУЛЯ)
+-- СЕКЦИЯ: ESP (МАКСИМАЛЬНОЕ КАЧЕСТВО)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -388,12 +388,14 @@ local espSettings = {
     healthColor = Color3.fromRGB(0, 255, 0),
     nameSize = 20,
     healthSize = 3,
+    boxType = "Billboard", -- "Billboard" или "Selection"
 }
 
 local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
         if espData.nameBillboard then espData.nameBillboard:Destroy() end
+        if espData.boxBillboard then espData.boxBillboard:Destroy() end
         if espData.box then espData.box:Destroy() end
         if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
@@ -423,11 +425,11 @@ local function createESP(targetPlayer)
     
     local espData = {}
     
-    -- ИМЯ
+    -- ИМЯ (BillboardGui)
     local nameBillboard = Instance.new("BillboardGui")
     nameBillboard.Size = UDim2.new(0, 200, 0, 30)
     nameBillboard.Adornee = head or rootPart
-    nameBillboard.StudsOffset = Vector3.new(0, 3, 0)
+    nameBillboard.StudsOffset = Vector3.new(0, 3.5, 0)
     nameBillboard.AlwaysOnTop = true
     nameBillboard.ResetOnSpawn = false
     nameBillboard.Parent = char
@@ -444,23 +446,42 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС (BoxHandleAdornment с DepthMode)
-    local box = Instance.new("BoxHandleAdornment")
-    box.Size = Vector3.new(2, 4, 2)
-    box.Color3 = espSettings.boxColor
-    box.Transparency = 0.3
-    box.AlwaysOnTop = true
-    box.DepthMode = Enum.DepthMode.AlwaysOnTop  -- 👈 КЛЮЧЕВОЕ
-    box.Adornee = rootPart
-    box.Parent = char
-    box.Visible = espEnabled and espSettings.showBox
-    espData.box = box
+    -- БОКС (BillboardGui + SelectionBox)
+    if espSettings.boxType == "Billboard" then
+        -- Вариант 1: BillboardGui с рамкой (виден всегда)
+        local boxBillboard = Instance.new("BillboardGui")
+        boxBillboard.Size = UDim2.new(0, 3, 0, 5)
+        boxBillboard.Adornee = rootPart
+        boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
+        boxBillboard.AlwaysOnTop = true
+        boxBillboard.ResetOnSpawn = false
+        boxBillboard.Parent = char
+        boxBillboard.Enabled = espEnabled and espSettings.showBox
+        
+        local boxFrame = Instance.new("Frame")
+        boxFrame.Size = UDim2.new(1, 0, 1, 0)
+        boxFrame.BackgroundTransparency = 1
+        boxFrame.BorderSizePixel = 2
+        boxFrame.BorderColor3 = espSettings.boxColor
+        boxFrame.Parent = boxBillboard
+        espData.boxFrame = boxFrame
+        espData.boxBillboard = boxBillboard
+    else
+        -- Вариант 2: SelectionBox (3D рамка)
+        local box = Instance.new("SelectionBox")
+        box.Color3 = espSettings.boxColor
+        box.Transparency = 0.3
+        box.Adornee = rootPart
+        box.Parent = char
+        box.Visible = espEnabled and espSettings.showBox
+        espData.box = box
+    end
     
-    -- ЗДОРОВЬЕ (отдельный BillboardGui)
+    -- ЗДОРОВЬЕ (BillboardGui)
     local healthBillboard = Instance.new("BillboardGui")
     healthBillboard.Size = UDim2.new(0, 100, 0, 10)
     healthBillboard.Adornee = rootPart
-    healthBillboard.StudsOffset = Vector3.new(0, -1.5, 0)
+    healthBillboard.StudsOffset = Vector3.new(0, -2, 0)
     healthBillboard.AlwaysOnTop = true
     healthBillboard.ResetOnSpawn = false
     healthBillboard.Parent = char
@@ -470,7 +491,8 @@ local function createESP(targetPlayer)
     healthBg.Size = UDim2.new(1, 0, 1, 0)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     healthBg.BackgroundTransparency = 0.5
-    healthBg.BorderSizePixel = 0
+    healthBg.BorderSizePixel = 1
+    healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
     healthBg.Parent = healthBillboard
     
     local healthBar = Instance.new("Frame")
@@ -498,7 +520,6 @@ local function createESP(targetPlayer)
                 local percent = math.clamp(health / maxHealth, 0, 1)
                 healthBar.Size = UDim2.new(percent, 0, 1, 0)
                 healthBar.BackgroundColor3 = espSettings.healthColor
-                healthBillboard.Size = UDim2.new(0, 100, 0, 10)
             end
         end)
         table.insert(espConnections, healthConnection)
@@ -534,6 +555,12 @@ local function updateESPSettings()
             espData.nameLabel.TextSize = espSettings.nameSize
             if espData.nameBillboard then
                 espData.nameBillboard.Enabled = espEnabled and espSettings.showName
+            end
+        end
+        if espData.boxFrame then
+            espData.boxFrame.BorderColor3 = espSettings.boxColor
+            if espData.boxBillboard then
+                espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
             end
         end
         if espData.box then
@@ -656,6 +683,26 @@ local HealthSizeSlider = TabESP:CreateSlider({
     Callback = function(Value)
         espSettings.healthSize = Value
         updateESPSettings()
+    end,
+})
+
+-- ВЫБОР ТИПА БОКСА
+local BoxTypeDropdown = TabESP:CreateDropdown({
+    Name = "Тип бокса",
+    Options = {"Billboard (2D)", "Selection (3D)"},
+    CurrentOption = {"Billboard (2D)"},
+    Flag = "ESPBoxType",
+    Info = "Billboard — 2D рамка на экране\nSelection — 3D рамка в мире",
+    Callback = function(Options)
+        if Options[1] == "Billboard (2D)" then
+            espSettings.boxType = "Billboard"
+        else
+            espSettings.boxType = "Selection"
+        end
+        -- Пересоздаём ESP с новым типом
+        if espEnabled then
+            refreshAllESP()
+        end
     end,
 })
 

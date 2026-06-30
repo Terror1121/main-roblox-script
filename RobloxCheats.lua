@@ -1,24 +1,20 @@
 -- 1. Загружаем библиотеку
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 2. Создаем главное окно (С КОНФИГАМИ)
+-- 2. Создаем главное окно (БЕЗ АВТОСОХРАНЕНИЯ)
 local Window = Rayfield:CreateWindow({
     Name = "Main Script",
     LoadingTitle = "Загрузка...",
     LoadingSubtitle = "by namesick",
     ScriptID = "sid_eo08v93jcdta",
     ToggleUIKeybind = Enum.KeyCode.G,
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = nil, -- Будет создана папка с именем скрипта
-        FileName = "MainConfig"
-    },
 })
 
 -- 3. Создаем вкладки
 local TabInf = Window:CreateTab("Информация", "info")
 local Tab = Window:CreateTab("Игрок", "user-round")
 local TabVisuals = Window:CreateTab("Визуал", "scan-eye")
+local TabConfigs = Window:CreateTab("Конфиги", "settings")
 local TabPr = Window:CreateTab("Прочее", "wrench")
 
 -- ============================================
@@ -28,7 +24,61 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch033",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch034",
+})
+
+-- ============================================
+-- СЕКЦИЯ: КОНФИГИ
+-- ============================================
+local SectionConfigs = TabConfigs:CreateSection("Управление конфигами")
+
+local OpenConfigButton = TabConfigs:CreateButton({
+    Name = "Открыть управление конфигами",
+    Callback = function()
+        Rayfield:CreateConfigWindow({
+            Title = "Конфиги",
+            FolderName = nil,
+        })
+    end,
+})
+
+local SaveConfigButton = TabConfigs:CreateButton({
+    Name = "Сохранить текущий конфиг",
+    Callback = function()
+        Rayfield:SaveConfiguration()
+        Rayfield:Notify({
+            Name = "Конфиг сохранен",
+            Content = "Настройки сохранены!",
+            Image = "check-circle",
+            Time = 3,
+        })
+    end,
+})
+
+local LoadConfigButton = TabConfigs:CreateButton({
+    Name = "Загрузить последний конфиг",
+    Callback = function()
+        Rayfield:LoadConfiguration()
+        Rayfield:Notify({
+            Name = "Конфиг загружен",
+            Content = "Настройки загружены!",
+            Image = "check-circle",
+            Time = 3,
+        })
+    end,
+})
+
+local ResetConfigButton = TabConfigs:CreateButton({
+    Name = "Сбросить настройки",
+    Callback = function()
+        Rayfield:ResetConfiguration()
+        Rayfield:Notify({
+            Name = "Сброс",
+            Content = "Настройки сброшены к значениям по умолчанию",
+            Image = "alert-circle",
+            Time = 3,
+        })
+    end,
 })
 
 -- ============================================
@@ -378,7 +428,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ВИЗУАЛ (СКЕЛЕТ - R15 + R6)
+-- СЕКЦИЯ: ВИЗУАЛ (АДАПТИВНЫЙ СКЕЛЕТ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -395,22 +445,23 @@ local espSettings = {
     nameSize = 14,
 }
 
--- MAPPING для R6
-local R6_MAPPING = {
-    ["UpperTorso"] = "Torso",
-    ["LowerTorso"] = "Torso",
-    ["LeftUpperArm"] = "Left Arm",
-    ["LeftLowerArm"] = "Left Arm",
-    ["LeftHand"] = "Left Arm",
-    ["RightUpperArm"] = "Right Arm",
-    ["RightLowerArm"] = "Right Arm",
-    ["RightHand"] = "Right Arm",
-    ["LeftUpperLeg"] = "Left Leg",
-    ["LeftLowerLeg"] = "Left Leg",
-    ["LeftFoot"] = "Left Leg",
-    ["RightUpperLeg"] = "Right Leg",
-    ["RightLowerLeg"] = "Right Leg",
-    ["RightFoot"] = "Right Leg",
+-- РАСШИРЕННЫЙ МАППИНГ ДЛЯ РАЗНЫХ ТИПОВ ПЕРСОНАЖЕЙ
+local PART_MAPPING = {
+    ["UpperTorso"] = {"UpperTorso", "Torso", "HumanoidRootPart"},
+    ["LowerTorso"] = {"LowerTorso", "Torso", "HumanoidRootPart"},
+    ["LeftUpperArm"] = {"LeftUpperArm", "Left Arm", "LeftArm"},
+    ["LeftLowerArm"] = {"LeftLowerArm", "Left Arm", "LeftArm"},
+    ["LeftHand"] = {"LeftHand", "Left Arm", "LeftArm"},
+    ["RightUpperArm"] = {"RightUpperArm", "Right Arm", "RightArm"},
+    ["RightLowerArm"] = {"RightLowerArm", "Right Arm", "RightArm"},
+    ["RightHand"] = {"RightHand", "Right Arm", "RightArm"},
+    ["LeftUpperLeg"] = {"LeftUpperLeg", "Left Leg", "LeftLeg"},
+    ["LeftLowerLeg"] = {"LeftLowerLeg", "Left Leg", "LeftLeg"},
+    ["LeftFoot"] = {"LeftFoot", "Left Leg", "LeftLeg"},
+    ["RightUpperLeg"] = {"RightUpperLeg", "Right Leg", "RightLeg"},
+    ["RightLowerLeg"] = {"RightLowerLeg", "Right Leg", "RightLeg"},
+    ["RightFoot"] = {"RightFoot", "Right Leg", "RightLeg"},
+    ["Head"] = {"Head"},
 }
 
 -- СОЕДИНЕНИЯ
@@ -475,20 +526,21 @@ local function clearAllESP()
 end
 
 local function getPart(char, r15Name)
-    local part = char:FindFirstChild(r15Name)
-    if part then return part end
+    -- Получаем список возможных имен для этой части
+    local possibleNames = PART_MAPPING[r15Name] or {r15Name}
     
-    local r6Name = R6_MAPPING[r15Name]
-    if r6Name then
-        part = char:FindFirstChild(r6Name)
+    -- Пробуем найти по точному совпадению
+    for _, name in ipairs(possibleNames) do
+        local part = char:FindFirstChild(name)
         if part then return part end
     end
     
+    -- Если не нашли, ищем по частичному совпадению (для кастомных моделей)
+    local searchLower = r15Name:lower()
     for _, child in ipairs(char:GetChildren()) do
         if child:IsA("BasePart") then
-            local name = child.Name:lower()
-            local search = r15Name:lower()
-            if name:find(search) or search:find(name) then
+            local childName = child.Name:lower()
+            if childName:find(searchLower) or searchLower:find(childName) then
                 return child
             end
         end
@@ -505,7 +557,6 @@ local function createESP(targetPlayer)
     
     local espData = {}
     local lines = {}
-    local char = targetPlayer.Character
     
     -- ИМЯ
     local nameLabel = Instance.new("TextLabel")
@@ -519,7 +570,7 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- ЛИНИИ СКЕЛЕТА (создаём сразу, но они будут обновляться)
+    -- ЛИНИИ СКЕЛЕТА
     for _, connection in ipairs(SKELETON_CONNECTIONS) do
         local line = Instance.new("Frame")
         line.Size = UDim2.new(0, 1, 0, 3)
@@ -557,7 +608,6 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
-    -- ФУНКЦИЯ ОБНОВЛЕНИЯ (вызывается каждый кадр)
     local function updateESP()
         if not espEnabled then
             nameLabel.Visible = false
@@ -618,7 +668,7 @@ local function createESP(targetPlayer)
         
         -- ИМЯ
         local rootPart = char:FindFirstChild("HumanoidRootPart")
-        local head = char:FindFirstChild("Head")
+        local head = getPart(char, "Head")
         if rootPart then
             local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2.5, 0))
             if headOnScreen then
@@ -655,20 +705,16 @@ local function createESP(targetPlayer)
         end
     end
     
-    -- ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ К RenderStepped
     local connection = runService.RenderStepped:Connect(updateESP)
     table.insert(espConnections, connection)
     
-    -- 👇 КЛЮЧЕВОЕ: ОБНОВЛЕНИЕ ПРИ ПЕРЕРОЖДЕНИИ
+    -- ОБНОВЛЕНИЕ ПРИ ПЕРЕРОЖДЕНИИ
     local characterAddedConnection
-    characterAddedConnection = targetPlayer.CharacterAdded:Connect(function(newChar)
-        -- Пересоздаём линии для нового персонажа
-        for _, data in ipairs(lines) do
-            data.frame.Visible = false
+    characterAddedConnection = targetPlayer.CharacterAdded:Connect(function()
+        if espEnabled then
+            task.wait(0.1)
+            updateESP()
         end
-        -- Обновляем всё в следующем кадре
-        task.wait(0.1)
-        updateESP()
     end)
     table.insert(espConnections, characterAddedConnection)
     
@@ -727,17 +773,13 @@ Players.PlayerRemoving:Connect(function(targetPlayer)
     removeESP(targetPlayer)
 end)
 
--- ОБНОВЛЕНИЕ ПРИ РЕСПАВНЕ (для самого игрока)
-local function onCharacterAdded()
+player.CharacterAdded:Connect(function()
     if espEnabled then
         task.wait(0.5)
         refreshAllESP()
     end
-end
+end)
 
-player.CharacterAdded:Connect(onCharacterAdded)
-
--- ОБНОВЛЕНИЕ ПРИ РЕСПАВНЕ (для всех игроков)
 for _, targetPlayer in ipairs(Players:GetPlayers()) do
     if targetPlayer ~= player then
         targetPlayer.CharacterAdded:Connect(function()
@@ -894,31 +936,4 @@ player.CharacterAdded:Connect(function()
         enableFly()
         FlyToggle:Set(true)
     end
-    if noclipEnabled then
-        disableNoclip()
-        task.wait(0.1)
-        enableNoclip()
-        NoclipToggle:Set(true)
-    end
-    if jumpEnabled then
-        disableJump()
-        task.wait(0.1)
-        enableJump()
-        JumpToggle:Set(true)
-    end
-end)
-
--- ============================================
--- ЗАГРУЗКА КОНФИГА
--- ============================================
-Rayfield:LoadConfiguration()
-
--- ============================================
--- ВЫВОД В КОНСОЛЬ
--- ============================================
-print("✅ Меню загружено! Нажми G для открытия.")
-print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
-print("🪁 Полет: включи через переключатель или нажми " .. FlyKeybind.CurrentKeybind)
-print("🧱 Noclip: включи через переключатель или нажми " .. NoclipKeybind.CurrentKeybind)
-print("🦘 Бесконечный прыжок: включи через переключатель")
-print("👁️ Визуал: включи через переключатель во вкладке Визуал")
+    if noclipEnabled

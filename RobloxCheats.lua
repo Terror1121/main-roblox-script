@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch031",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch032",
 })
 
 -- ============================================
@@ -430,10 +430,10 @@ local function createESPGui()
     if espGui then return end
     espGui = Instance.new("ScreenGui")
     espGui.Name = "VisualsGui"
-    espGui.Parent = player.PlayerGui  -- 👈 ИЗМЕНЕНО НА PlayerGui
+    espGui.Parent = player.PlayerGui
     espGui.ResetOnSpawn = false
     espGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    espGui.DisplayOrder = 0  -- 👈 УБРАЛ 999, ЧТОБЫ НЕ ПЕРЕКРЫВАТЬ
+    espGui.DisplayOrder = 0
 end
 
 local function removeESP(targetPlayer)
@@ -595,7 +595,7 @@ local function createESP(targetPlayer)
                         data.frame.Size = UDim2.new(0, distance, 0, 3)
                         data.frame.Position = UDim2.new(0, (x1 + x2) / 2 - distance/2, 0, (y1 + y2) / 2 - 1.5)
                         data.frame.Rotation = math.deg(math.atan2(dy, dx))
-                        data.frame.Visible = true
+                        data.frame.Visible = espEnabled and espSettings.showSkeleton
                         data.frame.BackgroundColor3 = espSettings.skeletonColor
                         data.frame.BackgroundTransparency = 0
                     else
@@ -728,7 +728,7 @@ end
 -- ИНТЕРФЕЙС ВИЗУАЛ В МЕНЮ
 -- ============================================
 
-local SectionVisuals = TabVisuals:CreateSection("Настройки ESP")  -- 👈 ПЕРЕИМЕНОВАНО
+local SectionVisuals = TabVisuals:CreateSection("Настройки ESP")
 
 local ESPToggle = TabVisuals:CreateToggle({
     Name = "Включить ESP",
@@ -791,7 +791,7 @@ local SkeletonToggle = TabVisuals:CreateToggle({
     Info = "Показывает скелет игрока (контур)",
     Callback = function(Value)
         espSettings.showSkeleton = Value
-        updateVisualsSettings()  -- 👈 ТЕПЕРЬ ОБНОВЛЯЕТ ВИДИМОСТЬ
+        updateVisualsSettings()
     end,
 })
 

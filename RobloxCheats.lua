@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch014",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch015",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (С SELECTIONBOX)
+-- СЕКЦИЯ: ESP (С ВЫБОРОМ ТИПА БОКСА)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -389,6 +389,7 @@ local espSettings = {
     healthColor = Color3.fromRGB(0, 255, 0),
     nameSize = 20,
     healthSize = 3,
+    boxType = "BoxHandle", -- "BoxHandle" (сквозь стены) или "Selection" (не сквозь стены)
 }
 
 local function createESPGui()
@@ -453,14 +454,28 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- БОКС (SelectionBox — работает всегда)
-    local box = Instance.new("SelectionBox")
-    box.Color3 = espSettings.boxColor
-    box.Transparency = 0.3
-    box.Adornee = rootPart
-    box.Parent = char
-    box.Visible = espEnabled and espSettings.showBox
-    espData.box = box
+    -- БОКС (в зависимости от выбора)
+    if espSettings.boxType == "BoxHandle" then
+        -- BoxHandleAdornment (виден сквозь стены)
+        local box = Instance.new("BoxHandleAdornment")
+        box.Size = Vector3.new(2.5, 5, 2.5)
+        box.Color3 = espSettings.boxColor
+        box.Transparency = 0.3
+        box.AlwaysOnTop = true
+        box.Adornee = rootPart
+        box.Parent = char
+        box.Visible = espEnabled and espSettings.showBox
+        espData.box = box
+    else
+        -- SelectionBox (не виден сквозь стены, но работает)
+        local box = Instance.new("SelectionBox")
+        box.Color3 = espSettings.boxColor
+        box.Transparency = 0.3
+        box.Adornee = rootPart
+        box.Parent = char
+        box.Visible = espEnabled and espSettings.showBox
+        espData.box = box
+    end
     
     -- ЗДОРОВЬЕ (ScreenGui)
     local healthBg = Instance.new("Frame")
@@ -489,7 +504,7 @@ local function createESP(targetPlayer)
         if not char then
             if nameLabel then nameLabel.Visible = false end
             if healthBg then healthBg.Visible = false end
-            if box then box.Visible = false end
+            if espData.box then espData.box.Visible = false end
             return
         end
         
@@ -499,7 +514,7 @@ local function createESP(targetPlayer)
         if not rootPart then
             if nameLabel then nameLabel.Visible = false end
             if healthBg then healthBg.Visible = false end
-            if box then box.Visible = false end
+            if espData.box then espData.box.Visible = false end
             return
         end
         
@@ -512,7 +527,7 @@ local function createESP(targetPlayer)
         if not rootOnScreen then
             if nameLabel then nameLabel.Visible = false end
             if healthBg then healthBg.Visible = false end
-            if box then box.Visible = false end
+            if espData.box then espData.box.Visible = false end
             return
         end
         
@@ -546,12 +561,16 @@ local function createESP(targetPlayer)
             if healthBg then healthBg.Visible = false end
         end
         
-        -- БОКС (SelectionBox)
-        if espSettings.showBox and box then
-            box.Visible = true
-            box.Color3 = espSettings.boxColor
+        -- БОКС
+        if espSettings.showBox and espData.box then
+            espData.box.Visible = true
+            if espSettings.boxType == "BoxHandle" then
+                espData.box.Color3 = espSettings.boxColor
+            else
+                espData.box.Color3 = espSettings.boxColor
+            end
         else
-            if box then box.Visible = false end
+            if espData.box then espData.box.Visible = false end
         end
     end)
     
@@ -740,51 +759,21 @@ local HealthSizeSlider = TabESP:CreateSlider({
 -- ВЫБОР ТИПА БОКСА
 local BoxTypeDropdown = TabESP:CreateDropdown({
     Name = "Тип бокса",
-    Options = {"Billboard (2D)", "Selection (3D)"},
-    CurrentOption = {"Billboard (2D)"},
+    Options = {"BoxHandle (сквозь стены)", "Selection (не сквозь стены)"},
+    CurrentOption = {"BoxHandle (сквозь стены)"},
     Flag = "ESPBoxType",
-    Info = "Billboard — 2D рамка на экране\nSelection — 3D рамка в мире",
+    Info = "BoxHandle — виден сквозь стены\nSelection — не виден сквозь стены, но работает в некоторых играх",
     Callback = function(Options)
-        if Options[1] == "Billboard (2D)" then
-            espSettings.boxType = "Billboard"
+        if Options[1] == "BoxHandle (сквозь стены)" then
+            espSettings.boxType = "BoxHandle"
         else
             espSettings.boxType = "Selection"
         end
-        -- Пересоздаём ESP с новым типом
         if espEnabled then
             refreshAllESP()
         end
     end,
 })
-
-Players.PlayerAdded:Connect(function(targetPlayer)
-    if espEnabled then
-        createESP(targetPlayer)
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(targetPlayer)
-    removeESP(targetPlayer)
-end)
-
-local function onCharacterAdded()
-    if espEnabled then
-        task.wait(0.3)
-        refreshAllESP()
-    end
-end
-
-player.CharacterAdded:Connect(onCharacterAdded)
-
-for _, targetPlayer in ipairs(Players:GetPlayers()) do
-    targetPlayer.CharacterAdded:Connect(function()
-        if espEnabled then
-            task.wait(0.3)
-            removeESP(targetPlayer)
-            createESP(targetPlayer)
-        end
-    end)
-end
 
 -- ============================================
 -- ТЕСТОВАЯ КНОПКА

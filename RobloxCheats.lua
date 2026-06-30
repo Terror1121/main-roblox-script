@@ -372,7 +372,270 @@ local JumpToggle = Tab:CreateToggle({
     end,
 })
 
-alfa-001-patch019
+-- ============================================
+-- СЕКЦИЯ: ESP (ФИНАЛЬНАЯ ВЕРСИЯ)
+-- ============================================
+local espEnabled = false
+local espConnections = {}
+local espObjects = {}
+
+local espSettings = {
+    showName = true,
+    showBox = true,
+    showHealth = true,
+    nameColor = Color3.fromRGB(255, 255, 255),
+    boxColor = Color3.fromRGB(0, 255, 255),
+    healthColor = Color3.fromRGB(0, 255, 0),
+    nameSize = 20,
+    healthSize = 3,
+}
+
+local function removeESP(targetPlayer)
+    local espData = espObjects[targetPlayer]
+    if espData then
+        if espData.nameBillboard then espData.nameBillboard:Destroy() end
+        if espData.boxBillboard then espData.boxBillboard:Destroy() end
+        if espData.healthBillboard then espData.healthBillboard:Destroy() end
+        espObjects[targetPlayer] = nil
+    end
+end
+
+local function clearAllESP()
+    for _, connection in ipairs(espConnections) do
+        connection:Disconnect()
+    end
+    espConnections = {}
+    for targetPlayer, _ in pairs(espObjects) do
+        removeESP(targetPlayer)
+    end
+    espObjects = {}
+end
+
+local function createESP(targetPlayer)
+    if targetPlayer == player then return end
+    if espObjects[targetPlayer] then return end
+    
+    local char = targetPlayer.Character
+    if not char then return end
+    
+    local head = char:FindFirstChild("Head")
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    local espData = {}
+    
+    -- ИМЯ
+    local nameBillboard = Instance.new("BillboardGui")
+    nameBillboard.Size = UDim2.new(0, 200, 0, 30)
+    nameBillboard.Adornee = head or rootPart
+    nameBillboard.StudsOffset = Vector3.new(0, (head and 3.5 or 1.5), 0)
+    nameBillboard.AlwaysOnTop = true
+    nameBillboard.ResetOnSpawn = false
+    nameBillboard.Parent = char
+    nameBillboard.Enabled = espEnabled and espSettings.showName
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, 0, 1, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = targetPlayer.Name
+    nameLabel.TextColor3 = espSettings.nameColor
+    nameLabel.TextSize = espSettings.nameSize
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Parent = nameBillboard
+    espData.nameLabel = nameLabel
+    espData.nameBillboard = nameBillboard
+    
+    -- БОКС (BillboardGui с контуром)
+    local boxBillboard = Instance.new("BillboardGui")
+    boxBillboard.Size = UDim2.new(0, 4, 0, 6)
+    boxBillboard.Adornee = rootPart
+    boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
+    boxBillboard.AlwaysOnTop = true
+    boxBillboard.ResetOnSpawn = false
+    boxBillboard.Parent = char
+    boxBillboard.Enabled = espEnabled and espSettings.showBox
+    
+    local boxFrame = Instance.new("Frame")
+    boxFrame.Size = UDim2.new(1, 0, 1, 0)
+    boxFrame.BackgroundTransparency = 1
+    boxFrame.BorderSizePixel = 2
+    boxFrame.BorderColor3 = espSettings.boxColor
+    boxFrame.Parent = boxBillboard
+    espData.boxFrame = boxFrame
+    espData.boxBillboard = boxBillboard
+    
+    -- ОБНОВЛЕНИЕ РАЗМЕРА БОКСА
+    local boxUpdateConnection = runService.RenderStepped:Connect(function()
+        if not espEnabled or not espSettings.showBox then
+            if boxBillboard then boxBillboard.Enabled = false end
+            return
+        end
+        if boxBillboard then boxBillboard.Enabled = true end
+        
+        local char = targetPlayer.Character
+        if not char then
+            if boxBillboard then boxBillboard.Enabled = false end
+            return
+        end
+        
+        local rootPart = char:FindFirstChild("HumanoidRootPart")
+        local head = char:FindFirstChild("Head")
+        if not rootPart then
+            if boxBillboard then boxBillboard.Enabled = false end
+            return
+        end
+        
+        local camera = workspace.CurrentCamera
+        if not camera then return end
+        
+        local headPos = (head and head.Position or rootPart.Position) + Vector3.new(0, 2.5, 0)
+        local footPos = rootPart.Position - Vector3.new(0, 1, 0)
+        
+        local headScreen, headOnScreen = camera:WorldToScreenPoint(headPos)
+        local footScreen, footOnScreen = camera:WorldToScreenPoint(footPos)
+        
+        if not headOnScreen or not footOnScreen then
+            if boxBillboard then boxBillboard.Enabled = false end
+            return
+        end
+        
+        local playerHeight = math.abs(headScreen.Y - footScreen.Y)
+        local playerWidth = playerHeight * 0.4
+        
+        local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
+        local scale = math.clamp(200 / distance, 0.5, 3)
+        
+        boxBillboard.Size = UDim2.new(0, playerWidth * scale, 0, playerHeight * scale)
+        boxFrame.BorderColor3 = espSettings.boxColor
+    end)
+    table.insert(espConnections, boxUpdateConnection)
+    
+    -- ЗДОРОВЬЕ
+    local healthBillboard = Instance.new("BillboardGui")
+    healthBillboard.Size = UDim2.new(0, 100, 0, 10)
+    healthBillboard.Adornee = rootPart
+    healthBillboard.StudsOffset = Vector3.new(0, -2, 0)
+    healthBillboard.AlwaysOnTop = true
+    healthBillboard.ResetOnSpawn = false
+    healthBillboard.Parent = char
+    healthBillboard.Enabled = espEnabled and espSettings.showHealth
+    
+    local healthBg = Instance.new("Frame")
+    healthBg.Size = UDim2.new(1, 0, 1, 0)
+    healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    healthBg.BackgroundTransparency = 0.4
+    healthBg.BorderSizePixel = 1
+    healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    healthBg.Parent = healthBillboard
+    
+    local healthBar = Instance.new("Frame")
+    healthBar.Size = UDim2.new(1, 0, 1, 0)
+    healthBar.BackgroundColor3 = espSettings.healthColor
+    healthBar.BorderSizePixel = 0
+    healthBar.Parent = healthBg
+    espData.healthBar = healthBar
+    espData.healthBg = healthBg
+    espData.healthBillboard = healthBillboard
+    
+    espObjects[targetPlayer] = espData
+    
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        local healthConnection = runService.RenderStepped:Connect(function()
+            if not espEnabled or not espSettings.showHealth then
+                if healthBillboard then healthBillboard.Enabled = false end
+                return
+            end
+            if healthBillboard then healthBillboard.Enabled = true end
+            if humanoid and healthBar then
+                local health = humanoid.Health
+                local maxHealth = humanoid.MaxHealth
+                local percent = math.clamp(health / maxHealth, 0, 1)
+                healthBar.Size = UDim2.new(percent, 0, 1, 0)
+                healthBar.BackgroundColor3 = espSettings.healthColor
+            end
+        end)
+        table.insert(espConnections, healthConnection)
+    end
+    
+    return espData
+end
+
+local function refreshAllESP()
+    clearAllESP()
+    if espEnabled then
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer ~= player then
+                createESP(targetPlayer)
+            end
+        end
+    end
+end
+
+local function toggleESP(state)
+    espEnabled = state
+    if state then
+        refreshAllESP()
+    else
+        clearAllESP()
+    end
+end
+
+local function updateESPSettings()
+    for _, espData in pairs(espObjects) do
+        if espData.nameLabel then
+            espData.nameLabel.TextColor3 = espSettings.nameColor
+            espData.nameLabel.TextSize = espSettings.nameSize
+            if espData.nameBillboard then
+                espData.nameBillboard.Enabled = espEnabled and espSettings.showName
+            end
+        end
+        if espData.boxFrame then
+            espData.boxFrame.BorderColor3 = espSettings.boxColor
+            if espData.boxBillboard then
+                espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
+            end
+        end
+        if espData.healthBar then
+            espData.healthBar.BackgroundColor3 = espSettings.healthColor
+            if espData.healthBillboard then
+                espData.healthBillboard.Enabled = espEnabled and espSettings.showHealth
+            end
+        end
+    end
+end
+
+-- ОБРАБОТЧИКИ ПОЯВЛЕНИЯ/УХОДА ИГРОКОВ
+Players.PlayerAdded:Connect(function(targetPlayer)
+    if espEnabled then
+        task.wait(0.5)
+        createESP(targetPlayer)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(targetPlayer)
+    removeESP(targetPlayer)
+end)
+
+-- ОБНОВЛЕНИЕ ПРИ РЕСПАВНЕ
+local function onCharacterAdded()
+    if espEnabled then
+        task.wait(0.5)
+        refreshAllESP()
+    end
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+for _, targetPlayer in ipairs(Players:GetPlayers()) do
+    targetPlayer.CharacterAdded:Connect(function()
+        if espEnabled then
+            task.wait(0.5)
+            removeESP(targetPlayer)
+            createESP(targetPlayer)
+        end
+    end)
+end
 
 -- ============================================
 -- ИНТЕРФЕЙС ESP В МЕНЮ

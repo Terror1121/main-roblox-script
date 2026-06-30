@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch037",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch038",
 })
 
 -- ============================================
@@ -682,22 +682,25 @@ local function updateVisualsSettings()
     end
 end
 
--- ОБРАБОТЧИКИ ПОЯВЛЕНИЯ/УХОДА ИГРОКОВ
+-- ОБРАБОТЧИКИ ПОЯВЛЕНИЯ/УХОДА ИГРОКОВ (ДОБАВЛЯЕМ ОБНОВЛЕНИЕ СЧЁТЧИКА)
 Players.PlayerAdded:Connect(function(targetPlayer)
     if espEnabled then
         task.wait(0.5)
         createESP(targetPlayer)
+        if espCounterEnabled then updateCounterText() end
     end
 end)
 
 Players.PlayerRemoving:Connect(function(targetPlayer)
     removeESP(targetPlayer)
+    if espCounterEnabled then updateCounterText() end
 end)
 
 player.CharacterAdded:Connect(function()
     if espEnabled then
         task.wait(0.5)
         refreshAllESP()
+        if espCounterEnabled then updateCounterText() end
     end
 end)
 
@@ -708,6 +711,7 @@ for _, targetPlayer in ipairs(Players:GetPlayers()) do
                 task.wait(0.3)
                 removeESP(targetPlayer)
                 createESP(targetPlayer)
+                if espCounterEnabled then updateCounterText() end
             end
         end)
     end
@@ -810,6 +814,26 @@ local NameSizeSlider = TabVisuals:CreateSlider({
 })
 
 -- ============================================
+-- СЧЁТЧИК ESP В МЕНЮ
+-- ============================================
+local TestESPToggle = TabVisuals:CreateToggle({
+    Name = "TestESP",
+    CurrentValue = false,
+    Flag = "TestESPToggle",
+    Info = "Показывает в правом нижнем углу количество игроков в ESP",
+    Callback = function(Value)
+        espCounterEnabled = Value
+        if Value then
+            createCounterLabel()
+        else
+            if espCounterLabel then
+                espCounterLabel.Visible = false
+            end
+        end
+    end,
+})
+
+-- ============================================
 -- ТЕСТОВАЯ КНОПКА
 -- ============================================
 local TButton = TabPr:CreateButton({
@@ -870,6 +894,68 @@ player.CharacterAdded:Connect(function()
         JumpToggle:Set(true)
     end
 end)
+
+-- ============================================
+-- СЧЁТЧИК ESP
+-- ============================================
+local espCounterEnabled = false
+local espCounterLabel = nil
+
+-- Функция создания текста в правом нижнем углу
+
+local function createCounterLabel()
+    if espCounterLabel then return end
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ESPCounter"
+    screenGui.Parent = player.PlayerGui
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.DisplayOrder = 999
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 250, 0, 30)
+    label.Position = UDim2.new(1, -260, 1, -40)
+    label.BackgroundTransparency = 1
+    label.Text = "ESP: 0/0"
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 16
+    label.Font = Enum.Font.GothamBold
+    label.TextXAlignment = Enum.TextXAlignment.Right
+    label.Parent = screenGui
+    espCounterLabel = label
+    
+    -- Обновляем каждые 2 секунды
+    game:GetService("RunService").Heartbeat:Connect(function()
+        if not espCounterEnabled then
+            if label then label.Visible = false end
+            return
+        end
+        label.Visible = true
+        local totalPlayers = #Players:GetPlayers()
+        local espCount = 0
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer ~= player and espObjects[targetPlayer] then
+                espCount = espCount + 1
+            end
+        end
+        label.Text = "ESP: " .. espCount .. "/" .. totalPlayers
+    end)
+end
+
+-- Функция обновления текста
+local function updateCounterText()
+    if not espCounterLabel then return end
+    local totalPlayers = #Players:GetPlayers()
+    local espCount = 0
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do
+        if targetPlayer ~= player and espObjects[targetPlayer] then
+            espCount = espCount + 1
+        end
+    end
+    espCounterLabel.Text = "ESP: " .. espCount .. "/" .. totalPlayers
+end
+
 
 -- ============================================
 -- ВЫВОД В КОНСОЛЬ

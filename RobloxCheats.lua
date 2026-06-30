@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch025",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch026",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (2D-КОНТУР СНАРУЖИ ИГРОКА)
+-- СЕКЦИЯ: ESP (СКЕЛЕТНЫЙ - ИДЕАЛЬНЫЙ КОНТУР)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -390,11 +390,38 @@ local espSettings = {
     healthSize = 3,
 }
 
+-- ЧАСТИ ТЕЛА ДЛЯ СКЕЛЕТА
+local BODY_PARTS = {
+    "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart",
+    "LeftUpperArm", "LeftLowerArm", "LeftHand",
+    "RightUpperArm", "RightLowerArm", "RightHand",
+    "LeftUpperLeg", "LeftLowerLeg", "LeftFoot",
+    "RightUpperLeg", "RightLowerLeg", "RightFoot"
+}
+
+-- СОЕДИНЕНИЯ МЕЖДУ ЧАСТЯМИ (скелет)
+local SKELETON_CONNECTIONS = {
+    {"Head", "UpperTorso"},
+    {"UpperTorso", "LowerTorso"},
+    {"UpperTorso", "LeftUpperArm"},
+    {"LeftUpperArm", "LeftLowerArm"},
+    {"LeftLowerArm", "LeftHand"},
+    {"UpperTorso", "RightUpperArm"},
+    {"RightUpperArm", "RightLowerArm"},
+    {"RightLowerArm", "RightHand"},
+    {"LowerTorso", "LeftUpperLeg"},
+    {"LeftUpperLeg", "LeftLowerLeg"},
+    {"LeftLowerLeg", "LeftFoot"},
+    {"LowerTorso", "RightUpperLeg"},
+    {"RightUpperLeg", "RightLowerLeg"},
+    {"RightLowerLeg", "RightFoot"},
+}
+
 local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
         if espData.nameBillboard then espData.nameBillboard:Destroy() end
-        if espData.boxBillboard then espData.boxBillboard:Destroy() end
+        if espData.skeletonGui then espData.skeletonGui:Destroy() end
         if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
     end
@@ -409,6 +436,67 @@ local function clearAllESP()
         removeESP(targetPlayer)
     end
     espObjects = {}
+end
+
+local function createSkeletonGui(char)
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "SkeletonGui"
+    gui.Parent = char
+    gui.ResetOnSpawn = false
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.DisplayOrder = 999
+    gui.Enabled = false
+    
+    -- Создаём линии для каждой связи
+    local lines = {}
+    for _, connection in ipairs(SKELETON_CONNECTIONS) do
+        local line = Instance.new("Frame")
+        line.Size = UDim2.new(0, 1, 0, 1)
+        line.BackgroundColor3 = espSettings.boxColor
+        line.BorderSizePixel = 0
+        line.Visible = false
+        line.Parent = gui
+        table.insert(lines, {frame = line, part1 = connection[1], part2 = connection[2]})
+    end
+    
+    return gui, lines
+end
+
+local function updateSkeleton(char, lines, color, camera)
+    local viewportSize = camera.ViewportSize
+    
+    for _, data in ipairs(lines) do
+        local part1 = char:FindFirstChild(data.part1)
+        local part2 = char:FindFirstChild(data.part2)
+        
+        if part1 and part2 then
+            local pos1, onScreen1 = camera:WorldToScreenPoint(part1.Position)
+            local pos2, onScreen2 = camera:WorldToScreenPoint(part2.Position)
+            
+            if onScreen1 and onScreen2 then
+                local x1, y1 = pos1.X, pos1.Y
+                local x2, y2 = pos2.X, pos2.Y
+                
+                local dx = x2 - x1
+                local dy = y2 - y1
+                local distance = math.sqrt(dx*dx + dy*dy)
+                
+                if distance > 0 then
+                    data.frame.Size = UDim2.new(0, distance, 0, 2)
+                    data.frame.Position = UDim2.new(0, (x1 + x2) / 2 - distance/2, 0, (y1 + y2) / 2 - 1)
+                    data.frame.Rotation = math.deg(math.atan2(dy, dx))
+                    data.frame.Visible = true
+                    data.frame.BackgroundColor3 = color
+                else
+                    data.frame.Visible = false
+                end
+            else
+                data.frame.Visible = false
+            end
+        else
+            data.frame.Visible = false
+        end
+    end
 end
 
 local function createESP(targetPlayer)
@@ -445,78 +533,30 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- 2D-КОНТУР (BillboardGui с рамкой, увеличенной на 0.5 студа)
-    local boxBillboard = Instance.new("BillboardGui")
-    boxBillboard.Size = UDim2.new(0, 4, 0, 6)
-    boxBillboard.Adornee = rootPart
-    boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
-    boxBillboard.AlwaysOnTop = true
-    boxBillboard.ResetOnSpawn = false
-    boxBillboard.Parent = char
-    boxBillboard.Enabled = espEnabled and espSettings.showBox
+    -- СКЕЛЕТ
+    local skeletonGui, skeletonLines = createSkeletonGui(char)
+    espData.skeletonGui = skeletonGui
+    espData.skeletonLines = skeletonLines
     
-    local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(1, 0, 1, 0)
-    boxFrame.BackgroundTransparency = 1
-    boxFrame.BorderSizePixel = 2
-    boxFrame.BorderColor3 = espSettings.boxColor
-    boxFrame.Parent = boxBillboard
-    espData.boxFrame = boxFrame
-    espData.boxBillboard = boxBillboard
-    
-    -- ОБНОВЛЕНИЕ РАЗМЕРА КОНТУРА (снаружи игрока)
-    local boxUpdateConnection = runService.RenderStepped:Connect(function()
+    local skeletonConnection = runService.RenderStepped:Connect(function()
         if not espEnabled or not espSettings.showBox then
-            if boxBillboard then boxBillboard.Enabled = false end
+            if skeletonGui then skeletonGui.Enabled = false end
             return
         end
-        if boxBillboard then boxBillboard.Enabled = true end
+        if skeletonGui then skeletonGui.Enabled = true end
         
         local char = targetPlayer.Character
         if not char then
-            if boxBillboard then boxBillboard.Enabled = false end
-            return
-        end
-        
-        local rootPart = char:FindFirstChild("HumanoidRootPart")
-        local head = char:FindFirstChild("Head")
-        if not rootPart then
-            if boxBillboard then boxBillboard.Enabled = false end
+            if skeletonGui then skeletonGui.Enabled = false end
             return
         end
         
         local camera = workspace.CurrentCamera
         if not camera then return end
         
-        -- Получаем размеры игрока на экране
-        local headPos = (head and head.Position or rootPart.Position) + Vector3.new(0, 2.5, 0)
-        local footPos = rootPart.Position - Vector3.new(0, 1, 0)
-        
-        local headScreen, headOnScreen = camera:WorldToScreenPoint(headPos)
-        local footScreen, footOnScreen = camera:WorldToScreenPoint(footPos)
-        
-        if not headOnScreen or not footOnScreen then
-            if boxBillboard then boxBillboard.Enabled = false end
-            return
-        end
-        
-        local playerHeight = math.abs(headScreen.Y - footScreen.Y)
-        local playerWidth = playerHeight * 0.4
-        
-        -- УВЕЛИЧИВАЕМ КОНТУР НА 20% (чтобы он был снаружи игрока)
-        local scale = 1.2
-        local finalWidth = playerWidth * scale
-        local finalHeight = playerHeight * scale
-        
-        -- Масштабируем в зависимости от расстояния
-        local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
-        local distanceScale = math.clamp(150 / distance, 0.5, 2.5)
-        
-        boxBillboard.Size = UDim2.new(0, finalWidth * distanceScale, 0, finalHeight * distanceScale)
-        boxFrame.BorderColor3 = espSettings.boxColor
-        boxFrame.BorderSizePixel = 2
+        updateSkeleton(char, skeletonLines, espSettings.boxColor, camera)
     end)
-    table.insert(espConnections, boxUpdateConnection)
+    table.insert(espConnections, skeletonConnection)
     
     -- ЗДОРОВЬЕ
     local healthBillboard = Instance.new("BillboardGui")
@@ -598,10 +638,9 @@ local function updateESPSettings()
                 espData.nameBillboard.Enabled = espEnabled and espSettings.showName
             end
         end
-        if espData.boxFrame then
-            espData.boxFrame.BorderColor3 = espSettings.boxColor
-            if espData.boxBillboard then
-                espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
+        if espData.skeletonLines then
+            for _, data in ipairs(espData.skeletonLines) do
+                data.frame.BackgroundColor3 = espSettings.boxColor
             end
         end
         if espData.healthBar then

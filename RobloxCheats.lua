@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch022",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch023",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (КОНТУР ИГРОКА)
+-- СЕКЦИЯ: ESP (КОНТУР ИГРОКА - ИСПРАВЛЕННЫЙ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -431,6 +431,8 @@ local function createOutline(char, rootPart, head, color)
 end
 
 local function updateOutline(group, rootPart, head, color)
+    if not group then return end
+    
     local rootPos = rootPart.Position
     local headPos = head and head.Position or rootPart.Position + Vector3.new(0, 2.5, 0)
     
@@ -498,22 +500,49 @@ local function createESP(targetPlayer)
     
     local outlineConnection = runService.RenderStepped:Connect(function()
         if not espEnabled or not espSettings.showBox then
-            if outlineGroup then outlineGroup.Enabled = false end
+            -- Скрываем контур делая его прозрачным
+            if outlineGroup then
+                for _, part in ipairs(outlineGroup:GetChildren()) do
+                    if part:IsA("Part") then
+                        part.Transparency = 1
+                    end
+                end
+            end
             return
         end
-        if outlineGroup then outlineGroup.Enabled = true end
         
         local char = targetPlayer.Character
         if not char then
-            if outlineGroup then outlineGroup.Enabled = false end
+            if outlineGroup then
+                for _, part in ipairs(outlineGroup:GetChildren()) do
+                    if part:IsA("Part") then
+                        part.Transparency = 1
+                    end
+                end
+            end
             return
         end
         
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         local head = char:FindFirstChild("Head")
         if not rootPart then
-            if outlineGroup then outlineGroup.Enabled = false end
+            if outlineGroup then
+                for _, part in ipairs(outlineGroup:GetChildren()) do
+                    if part:IsA("Part") then
+                        part.Transparency = 1
+                    end
+                end
+            end
             return
+        end
+        
+        -- Делаем контур видимым
+        if outlineGroup then
+            for _, part in ipairs(outlineGroup:GetChildren()) do
+                if part:IsA("Part") then
+                    part.Transparency = 0
+                end
+            end
         end
         
         updateOutline(outlineGroup, rootPart, head, espSettings.boxColor)

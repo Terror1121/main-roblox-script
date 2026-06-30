@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch024",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch025",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (КОНТУР СНАРУЖИ ИГРОКА)
+-- СЕКЦИЯ: ESP (2D-КОНТУР СНАРУЖИ ИГРОКА)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -394,7 +394,7 @@ local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
         if espData.nameBillboard then espData.nameBillboard:Destroy() end
-        if espData.outlineGroup then espData.outlineGroup:Destroy() end
+        if espData.boxBillboard then espData.boxBillboard:Destroy() end
         if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
     end
@@ -409,59 +409,6 @@ local function clearAllESP()
         removeESP(targetPlayer)
     end
     espObjects = {}
-end
-
-local function createOutline(char, rootPart, head, color)
-    local group = Instance.new("Model")
-    group.Name = "OutlineGroup"
-    group.Parent = char
-    
-    for i = 1, 4 do
-        local line = Instance.new("Part")
-        line.Size = Vector3.new(3, 0.15, 0.15)
-        line.Anchored = true
-        line.CanCollide = false
-        line.Material = Enum.Material.SmoothPlastic
-        line.Color = color
-        line.Transparency = 0
-        line.Parent = group
-    end
-    
-    return group
-end
-
-local function updateOutline(group, rootPart, head, color)
-    if not group then return end
-    
-    local rootPos = rootPart.Position
-    local headPos = head and head.Position or rootPart.Position + Vector3.new(0, 2.5, 0)
-    
-    local height = (headPos - rootPart.Position).Magnitude
-    local width = height * 0.45  -- Немного шире
-    
-    local children = group:GetChildren()
-    if #children >= 4 then
-        -- Нижняя линия (под ногами)
-        children[1].Size = Vector3.new(width, 0.15, 0.15)
-        children[1].Position = rootPos + Vector3.new(0, -height/2 - 0.3, 0)
-        
-        -- Левая линия (слева от игрока)
-        children[2].Size = Vector3.new(0.15, height + 0.6, 0.15)
-        children[2].Position = rootPos + Vector3.new(-width/2 - 0.3, 0, 0)
-        
-        -- Правая линия (справа от игрока)
-        children[3].Size = Vector3.new(0.15, height + 0.6, 0.15)
-        children[3].Position = rootPos + Vector3.new(width/2 + 0.3, 0, 0)
-        
-        -- Верхняя линия (над головой)
-        children[4].Size = Vector3.new(width, 0.15, 0.15)
-        children[4].Position = rootPos + Vector3.new(0, height/2 + 0.3, 0)
-        
-        for _, part in ipairs(children) do
-            part.Color = color
-            part.Transparency = 0
-        end
-    end
 end
 
 local function createESP(targetPlayer)
@@ -498,64 +445,84 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- КОНТУР
-    local outlineGroup = createOutline(char, rootPart, head, espSettings.boxColor)
-    espData.outlineGroup = outlineGroup
+    -- 2D-КОНТУР (BillboardGui с рамкой, увеличенной на 0.5 студа)
+    local boxBillboard = Instance.new("BillboardGui")
+    boxBillboard.Size = UDim2.new(0, 4, 0, 6)
+    boxBillboard.Adornee = rootPart
+    boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
+    boxBillboard.AlwaysOnTop = true
+    boxBillboard.ResetOnSpawn = false
+    boxBillboard.Parent = char
+    boxBillboard.Enabled = espEnabled and espSettings.showBox
     
-    local outlineConnection = runService.RenderStepped:Connect(function()
+    local boxFrame = Instance.new("Frame")
+    boxFrame.Size = UDim2.new(1, 0, 1, 0)
+    boxFrame.BackgroundTransparency = 1
+    boxFrame.BorderSizePixel = 2
+    boxFrame.BorderColor3 = espSettings.boxColor
+    boxFrame.Parent = boxBillboard
+    espData.boxFrame = boxFrame
+    espData.boxBillboard = boxBillboard
+    
+    -- ОБНОВЛЕНИЕ РАЗМЕРА КОНТУРА (снаружи игрока)
+    local boxUpdateConnection = runService.RenderStepped:Connect(function()
         if not espEnabled or not espSettings.showBox then
-            if outlineGroup then
-                for _, part in ipairs(outlineGroup:GetChildren()) do
-                    if part:IsA("Part") then
-                        part.Transparency = 1
-                    end
-                end
-            end
+            if boxBillboard then boxBillboard.Enabled = false end
             return
         end
+        if boxBillboard then boxBillboard.Enabled = true end
         
         local char = targetPlayer.Character
         if not char then
-            if outlineGroup then
-                for _, part in ipairs(outlineGroup:GetChildren()) do
-                    if part:IsA("Part") then
-                        part.Transparency = 1
-                    end
-                end
-            end
+            if boxBillboard then boxBillboard.Enabled = false end
             return
         end
         
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         local head = char:FindFirstChild("Head")
         if not rootPart then
-            if outlineGroup then
-                for _, part in ipairs(outlineGroup:GetChildren()) do
-                    if part:IsA("Part") then
-                        part.Transparency = 1
-                    end
-                end
-            end
+            if boxBillboard then boxBillboard.Enabled = false end
             return
         end
         
-        if outlineGroup then
-            for _, part in ipairs(outlineGroup:GetChildren()) do
-                if part:IsA("Part") then
-                    part.Transparency = 0
-                end
-            end
+        local camera = workspace.CurrentCamera
+        if not camera then return end
+        
+        -- Получаем размеры игрока на экране
+        local headPos = (head and head.Position or rootPart.Position) + Vector3.new(0, 2.5, 0)
+        local footPos = rootPart.Position - Vector3.new(0, 1, 0)
+        
+        local headScreen, headOnScreen = camera:WorldToScreenPoint(headPos)
+        local footScreen, footOnScreen = camera:WorldToScreenPoint(footPos)
+        
+        if not headOnScreen or not footOnScreen then
+            if boxBillboard then boxBillboard.Enabled = false end
+            return
         end
         
-        updateOutline(outlineGroup, rootPart, head, espSettings.boxColor)
+        local playerHeight = math.abs(headScreen.Y - footScreen.Y)
+        local playerWidth = playerHeight * 0.4
+        
+        -- УВЕЛИЧИВАЕМ КОНТУР НА 20% (чтобы он был снаружи игрока)
+        local scale = 1.2
+        local finalWidth = playerWidth * scale
+        local finalHeight = playerHeight * scale
+        
+        -- Масштабируем в зависимости от расстояния
+        local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
+        local distanceScale = math.clamp(150 / distance, 0.5, 2.5)
+        
+        boxBillboard.Size = UDim2.new(0, finalWidth * distanceScale, 0, finalHeight * distanceScale)
+        boxFrame.BorderColor3 = espSettings.boxColor
+        boxFrame.BorderSizePixel = 2
     end)
-    table.insert(espConnections, outlineConnection)
+    table.insert(espConnections, boxUpdateConnection)
     
     -- ЗДОРОВЬЕ
     local healthBillboard = Instance.new("BillboardGui")
     healthBillboard.Size = UDim2.new(0, 100, 0, 10)
     healthBillboard.Adornee = rootPart
-    healthBillboard.StudsOffset = Vector3.new(0, -2.5, 0)
+    healthBillboard.StudsOffset = Vector3.new(0, -2, 0)
     healthBillboard.AlwaysOnTop = true
     healthBillboard.ResetOnSpawn = false
     healthBillboard.Parent = char
@@ -631,12 +598,10 @@ local function updateESPSettings()
                 espData.nameBillboard.Enabled = espEnabled and espSettings.showName
             end
         end
-        if espData.outlineGroup then
-            for _, part in ipairs(espData.outlineGroup:GetChildren()) do
-                if part:IsA("Part") then
-                    part.Color = espSettings.boxColor
-                    part.Transparency = 0
-                end
+        if espData.boxFrame then
+            espData.boxFrame.BorderColor3 = espSettings.boxColor
+            if espData.boxBillboard then
+                espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
             end
         end
         if espData.healthBar then

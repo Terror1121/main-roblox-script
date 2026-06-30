@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch017",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch018",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (BILLBOARDGUI + COREGUI)
+-- СЕКЦИЯ: ESP (BILLBOARDGUI + НОРМАЛЬНЫЕ БОКСЫ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -424,7 +424,7 @@ local function createESP(targetPlayer)
     
     local espData = {}
     
-    -- ИМЯ (BillboardGui)
+    -- ИМЯ
     local nameBillboard = Instance.new("BillboardGui")
     nameBillboard.Size = UDim2.new(0, 200, 0, 30)
     nameBillboard.Adornee = head or rootPart
@@ -445,9 +445,9 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС (BillboardGui с рамкой, виден всегда)
+    -- БОКС (BillboardGui с нормальной рамкой)
     local boxBillboard = Instance.new("BillboardGui")
-    boxBillboard.Size = UDim2.new(0, 4, 0, 6)  -- Увеличенный размер
+    boxBillboard.Size = UDim2.new(0, 4, 0, 6)  -- Размер в 3D-мире (ширина 4, высота 6)
     boxBillboard.Adornee = rootPart
     boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
     boxBillboard.AlwaysOnTop = true
@@ -456,15 +456,15 @@ local function createESP(targetPlayer)
     boxBillboard.Enabled = espEnabled and espSettings.showBox
     
     local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(1, 0, 1, 0)
-    boxFrame.BackgroundTransparency = 1
-    boxFrame.BorderSizePixel = 2
+    boxFrame.Size = UDim2.new(1, 0, 1, 0)  -- Растягиваем на весь BillboardGui
+    boxFrame.BackgroundTransparency = 0.9  -- Почти прозрачный, чтобы видеть рамку
+    boxFrame.BorderSizePixel = 3           -- Толстая рамка
     boxFrame.BorderColor3 = espSettings.boxColor
     boxFrame.Parent = boxBillboard
     espData.boxFrame = boxFrame
     espData.boxBillboard = boxBillboard
     
-    -- ЗДОРОВЬЕ (BillboardGui)
+    -- ЗДОРОВЬЕ
     local healthBillboard = Instance.new("BillboardGui")
     healthBillboard.Size = UDim2.new(0, 100, 0, 10)
     healthBillboard.Adornee = rootPart
@@ -507,7 +507,6 @@ local function createESP(targetPlayer)
                 local percent = math.clamp(health / maxHealth, 0, 1)
                 healthBar.Size = UDim2.new(percent, 0, 1, 0)
                 healthBar.BackgroundColor3 = espSettings.healthColor
-                healthBillboard.Size = UDim2.new(0, 100, 0, 10)
             end
         end)
         table.insert(espConnections, healthConnection)
@@ -555,7 +554,6 @@ local function updateESPSettings()
             espData.healthBar.BackgroundColor3 = espSettings.healthColor
             if espData.healthBillboard then
                 espData.healthBillboard.Enabled = espEnabled and espSettings.showHealth
-                espData.healthBillboard.Size = UDim2.new(0, 100, 0, 10)
             end
         end
     end

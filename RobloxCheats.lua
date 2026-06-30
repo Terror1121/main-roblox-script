@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch008",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch009",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (BILLBOARDGUI — ГАРАНТИРОВАННО РАБОТАЕТ)
+-- СЕКЦИЯ: ESP (SELECTIONBOX + BILLBOARDGUI)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -394,7 +394,7 @@ local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
         if espData.nameBillboard then espData.nameBillboard:Destroy() end
-        if espData.boxBillboard then espData.boxBillboard:Destroy() end
+        if espData.box then espData.box:Destroy() end
         if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
     end
@@ -444,30 +444,20 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС
-    local boxBillboard = Instance.new("BillboardGui")
-    boxBillboard.Size = UDim2.new(0, 4, 0, 6)
-    boxBillboard.Adornee = rootPart
-    boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
-    boxBillboard.AlwaysOnTop = true
-    boxBillboard.ResetOnSpawn = false
-    boxBillboard.Parent = char
-    boxBillboard.Enabled = espEnabled and espSettings.showBox
-    
-    local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(1, 0, 1, 0)
-    boxFrame.BackgroundTransparency = 1
-    boxFrame.BorderSizePixel = 2
-    boxFrame.BorderColor3 = espSettings.boxColor
-    boxFrame.Parent = boxBillboard
-    espData.boxFrame = boxFrame
-    espData.boxBillboard = boxBillboard
+    -- БОКС (SelectionBox — работает всегда)
+    local box = Instance.new("SelectionBox")
+    box.Color3 = espSettings.boxColor
+    box.Transparency = 0.3
+    box.Adornee = rootPart
+    box.Parent = char
+    box.Visible = espEnabled and espSettings.showBox
+    espData.box = box
     
     -- ЗДОРОВЬЕ
     local healthBillboard = Instance.new("BillboardGui")
-    healthBillboard.Size = UDim2.new(0, 3, 0, 0.4)
+    healthBillboard.Size = UDim2.new(0, 3, 0, 0.3)
     healthBillboard.Adornee = head or rootPart
-    healthBillboard.StudsOffset = Vector3.new(0, (head and 2.5 or 0.5), 0)
+    healthBillboard.StudsOffset = Vector3.new(0, (head and 2 or 0), 0)
     healthBillboard.AlwaysOnTop = true
     healthBillboard.ResetOnSpawn = false
     healthBillboard.Parent = char
@@ -505,7 +495,7 @@ local function createESP(targetPlayer)
                 local percent = math.clamp(health / maxHealth, 0, 1)
                 healthBar.Size = UDim2.new(percent, 0, 1, 0)
                 healthBar.BackgroundColor3 = espSettings.healthColor
-                healthBillboard.Size = UDim2.new(0, espSettings.healthSize * 3, 0, espSettings.healthSize * 0.4)
+                healthBillboard.Size = UDim2.new(0, espSettings.healthSize * 3, 0, espSettings.healthSize * 0.3)
             end
         end)
         table.insert(espConnections, healthConnection)
@@ -543,17 +533,15 @@ local function updateESPSettings()
                 espData.nameBillboard.Enabled = espEnabled and espSettings.showName
             end
         end
-        if espData.boxFrame then
-            espData.boxFrame.BorderColor3 = espSettings.boxColor
-            if espData.boxBillboard then
-                espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
-            end
+        if espData.box then
+            espData.box.Color3 = espSettings.boxColor
+            espData.box.Visible = espEnabled and espSettings.showBox
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor
             if espData.healthBillboard then
                 espData.healthBillboard.Enabled = espEnabled and espSettings.showHealth
-                espData.healthBillboard.Size = UDim2.new(0, espSettings.healthSize * 3, 0, espSettings.healthSize * 0.4)
+                espData.healthBillboard.Size = UDim2.new(0, espSettings.healthSize * 3, 0, espSettings.healthSize * 0.3)
             end
         end
     end

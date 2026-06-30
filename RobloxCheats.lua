@@ -39,7 +39,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch042",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch043",
 })
 
 -- ============================================
@@ -151,13 +151,15 @@ local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
 local flyKeybind = "X"
+local updatingFlyToggle = false -- Флаг для предотвращения рекурсии
 
--- СОЗДАЕМ ТОГЛ ДО ФУНКЦИЙ
+-- СОЗДАЕМ ТОГЛ
 local FlyToggle = Tab:CreateToggle({
     Name = "Активировать полет",
     CurrentValue = false,
     Flag = "FlyToggle",
     Callback = function(Value)
+        if updatingFlyToggle then return end -- Если обновляем из кода - пропускаем
         if Value then
             enableFly()
         else
@@ -244,8 +246,10 @@ local function toggleFly()
     else
         enableFly()
     end
-    -- Обновляем значение тогла без вызова колбэка
+    -- Обновляем тогл без вызова колбэка
+    updatingFlyToggle = true
     FlyToggle:Set(flying, true)
+    updatingFlyToggle = false
 end
 
 local FlySpeedSlider = Tab:CreateSlider({
@@ -279,13 +283,15 @@ local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 local noclipEnabled = false
 local noclipRenderConnection = nil
 local noclipKeybind = "V"
+local updatingNoclipToggle = false -- Флаг для предотвращения рекурсии
 
--- СОЗДАЕМ ТОГЛ ДО ФУНКЦИЙ
+-- СОЗДАЕМ ТОГЛ
 local NoclipToggle = Tab:CreateToggle({
     Name = "Активировать Noclip",
     CurrentValue = false,
     Flag = "NoclipToggle",
     Callback = function(Value)
+        if updatingNoclipToggle then return end -- Если обновляем из кода - пропускаем
         if Value then
             enableNoclip()
         else
@@ -312,8 +318,10 @@ local function toggleNoclip()
     else
         enableNoclip()
     end
-    -- Обновляем значение тогла без вызова колбэка
+    -- Обновляем тогл без вызова колбэка
+    updatingNoclipToggle = true
     NoclipToggle:Set(noclipEnabled, true)
+    updatingNoclipToggle = false
 end
 
 if noclipRenderConnection then
@@ -870,13 +878,17 @@ player.CharacterAdded:Connect(function()
     task.wait(0.5)
     if flying then
         enableFly()
+        updatingFlyToggle = true
         FlyToggle:Set(true, true)
+        updatingFlyToggle = false
     end
     if noclipEnabled then
         disableNoclip()
         task.wait(0.1)
         enableNoclip()
+        updatingNoclipToggle = true
         NoclipToggle:Set(true, true)
+        updatingNoclipToggle = false
     end
     if jumpEnabled then
         disableJump()

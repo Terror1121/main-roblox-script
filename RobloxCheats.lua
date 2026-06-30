@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch013",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch014",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (РАБОТАЕТ НА ВСЕХ ИГРОКАХ)
+-- СЕКЦИЯ: ESP (С SELECTIONBOX)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -405,7 +405,7 @@ local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
         if espData.nameLabel then espData.nameLabel:Destroy() end
-        if espData.boxFrame then espData.boxFrame:Destroy() end
+        if espData.box then espData.box:Destroy() end
         if espData.healthBg then espData.healthBg:Destroy() end
         if espData.healthBar then espData.healthBar:Destroy() end
         espObjects[targetPlayer] = nil
@@ -431,11 +431,17 @@ local function createESP(targetPlayer)
     if targetPlayer == player then return end
     if espObjects[targetPlayer] then return end
     
-    createESPGui()
+    local char = targetPlayer.Character
+    if not char then return end
+    
+    local head = char:FindFirstChild("Head")
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
     
     local espData = {}
     
-    -- ИМЯ
+    -- ИМЯ (ScreenGui)
+    createESPGui()
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0, 200, 0, 30)
     nameLabel.BackgroundTransparency = 1
@@ -447,17 +453,16 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- БОКС (2D рамка)
-    local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(0, 100, 0, 150)
-    boxFrame.BackgroundTransparency = 1
-    boxFrame.BorderSizePixel = 3
-    boxFrame.BorderColor3 = espSettings.boxColor
-    boxFrame.Visible = false
-    boxFrame.Parent = espGui
-    espData.boxFrame = boxFrame
+    -- БОКС (SelectionBox — работает всегда)
+    local box = Instance.new("SelectionBox")
+    box.Color3 = espSettings.boxColor
+    box.Transparency = 0.3
+    box.Adornee = rootPart
+    box.Parent = char
+    box.Visible = espEnabled and espSettings.showBox
+    espData.box = box
     
-    -- ЗДОРОВЬЕ
+    -- ЗДОРОВЬЕ (ScreenGui)
     local healthBg = Instance.new("Frame")
     healthBg.Size = UDim2.new(0, 80, 0, 10)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -482,9 +487,9 @@ local function createESP(targetPlayer)
         
         local char = targetPlayer.Character
         if not char then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
+            if nameLabel then nameLabel.Visible = false end
+            if healthBg then healthBg.Visible = false end
+            if box then box.Visible = false end
             return
         end
         
@@ -492,9 +497,9 @@ local function createESP(targetPlayer)
         local head = char:FindFirstChild("Head")
         local humanoid = char:FindFirstChildOfClass("Humanoid")
         if not rootPart then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
+            if nameLabel then nameLabel.Visible = false end
+            if healthBg then healthBg.Visible = false end
+            if box then box.Visible = false end
             return
         end
         
@@ -505,9 +510,9 @@ local function createESP(targetPlayer)
         local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2, 0))
         
         if not rootOnScreen then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
+            if nameLabel then nameLabel.Visible = false end
+            if healthBg then healthBg.Visible = false end
+            if box then box.Visible = false end
             return
         end
         
@@ -517,27 +522,17 @@ local function createESP(targetPlayer)
         local boxHeight = math.max(playerHeight, 70)
         
         -- ИМЯ
-        if espSettings.showName then
+        if espSettings.showName and nameLabel then
             nameLabel.Visible = true
             nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 40)
             nameLabel.TextColor3 = espSettings.nameColor
             nameLabel.TextSize = espSettings.nameSize
         else
-            nameLabel.Visible = false
-        end
-        
-        -- БОКС
-        if espSettings.showBox then
-            boxFrame.Visible = true
-            boxFrame.Size = UDim2.new(0, boxSize, 0, boxHeight)
-            boxFrame.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 5)
-            boxFrame.BorderColor3 = espSettings.boxColor
-        else
-            boxFrame.Visible = false
+            if nameLabel then nameLabel.Visible = false end
         end
         
         -- ЗДОРОВЬЕ
-        if espSettings.showHealth and humanoid then
+        if espSettings.showHealth and humanoid and healthBg and healthBar then
             local health = humanoid.Health
             local maxHealth = humanoid.MaxHealth
             local percent = math.clamp(health / maxHealth, 0, 1)
@@ -548,7 +543,15 @@ local function createESP(targetPlayer)
             healthBar.Size = UDim2.new(percent, 0, 1, 0)
             healthBar.BackgroundColor3 = espSettings.healthColor
         else
-            healthBg.Visible = false
+            if healthBg then healthBg.Visible = false end
+        end
+        
+        -- БОКС (SelectionBox)
+        if espSettings.showBox and box then
+            box.Visible = true
+            box.Color3 = espSettings.boxColor
+        else
+            if box then box.Visible = false end
         end
     end)
     
@@ -582,8 +585,9 @@ local function updateESPSettings()
             espData.nameLabel.TextColor3 = espSettings.nameColor
             espData.nameLabel.TextSize = espSettings.nameSize
         end
-        if espData.boxFrame then
-            espData.boxFrame.BorderColor3 = espSettings.boxColor
+        if espData.box then
+            espData.box.Color3 = espSettings.boxColor
+            espData.box.Visible = espEnabled and espSettings.showBox
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor

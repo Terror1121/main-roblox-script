@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch026",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch027",
 })
 
 -- ============================================
@@ -447,12 +447,12 @@ local function createSkeletonGui(char)
     gui.DisplayOrder = 999
     gui.Enabled = false
     
-    -- Создаём линии для каждой связи
     local lines = {}
     for _, connection in ipairs(SKELETON_CONNECTIONS) do
         local line = Instance.new("Frame")
         line.Size = UDim2.new(0, 1, 0, 1)
         line.BackgroundColor3 = espSettings.boxColor
+        line.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ!
         line.BorderSizePixel = 0
         line.Visible = false
         line.Parent = gui
@@ -482,11 +482,12 @@ local function updateSkeleton(char, lines, color, camera)
                 local distance = math.sqrt(dx*dx + dy*dy)
                 
                 if distance > 0 then
-                    data.frame.Size = UDim2.new(0, distance, 0, 2)
-                    data.frame.Position = UDim2.new(0, (x1 + x2) / 2 - distance/2, 0, (y1 + y2) / 2 - 1)
+                    data.frame.Size = UDim2.new(0, distance, 0, 3)  -- 👈 Толщина 3
+                    data.frame.Position = UDim2.new(0, (x1 + x2) / 2 - distance/2, 0, (y1 + y2) / 2 - 1.5)
                     data.frame.Rotation = math.deg(math.atan2(dy, dx))
                     data.frame.Visible = true
                     data.frame.BackgroundColor3 = color
+                    data.frame.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ!
                 else
                     data.frame.Visible = false
                 end
@@ -579,6 +580,7 @@ local function createESP(targetPlayer)
     local healthBar = Instance.new("Frame")
     healthBar.Size = UDim2.new(1, 0, 1, 0)
     healthBar.BackgroundColor3 = espSettings.healthColor
+    healthBar.BackgroundTransparency = 0
     healthBar.BorderSizePixel = 0
     healthBar.Parent = healthBg
     espData.healthBar = healthBar
@@ -641,6 +643,7 @@ local function updateESPSettings()
         if espData.skeletonLines then
             for _, data in ipairs(espData.skeletonLines) do
                 data.frame.BackgroundColor3 = espSettings.boxColor
+                data.frame.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ!
             end
         end
         if espData.healthBar then

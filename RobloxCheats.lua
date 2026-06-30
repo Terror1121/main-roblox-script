@@ -1,13 +1,18 @@
 -- 1. Загружаем библиотеку
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 2. Создаем главное окно
+-- 2. Создаем главное окно (С КОНФИГАМИ)
 local Window = Rayfield:CreateWindow({
     Name = "Main Script",
     LoadingTitle = "Загрузка...",
     LoadingSubtitle = "by namesick",
     ScriptID = "sid_eo08v93jcdta",
     ToggleUIKeybind = Enum.KeyCode.G,
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = nil, -- Будет создана папка с именем скрипта
+        FileName = "MainConfig"
+    },
 })
 
 -- 3. Создаем вкладки
@@ -23,7 +28,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch032",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch033",
 })
 
 -- ============================================
@@ -381,13 +386,13 @@ local espObjects = {}
 local espGui = nil
 
 local espSettings = {
-    showName = true,
-    showSkeleton = true,
-    showHealth = true,
+    showName = false,
+    showSkeleton = false,
+    showHealth = false,
     nameColor = Color3.fromRGB(255, 255, 255),
     skeletonColor = Color3.fromRGB(0, 255, 255),
     healthColor = Color3.fromRGB(0, 255, 0),
-    nameSize = 20,
+    nameSize = 14,
 }
 
 -- MAPPING для R6
@@ -500,6 +505,7 @@ local function createESP(targetPlayer)
     
     local espData = {}
     local lines = {}
+    local char = targetPlayer.Character
     
     -- ИМЯ
     local nameLabel = Instance.new("TextLabel")
@@ -513,7 +519,7 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- ЛИНИИ СКЕЛЕТА
+    -- ЛИНИИ СКЕЛЕТА (создаём сразу, но они будут обновляться)
     for _, connection in ipairs(SKELETON_CONNECTIONS) do
         local line = Instance.new("Frame")
         line.Size = UDim2.new(0, 1, 0, 3)
@@ -551,7 +557,8 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
-    local connection = runService.RenderStepped:Connect(function()
+    -- ФУНКЦИЯ ОБНОВЛЕНИЯ (вызывается каждый кадр)
+    local function updateESP()
         if not espEnabled then
             nameLabel.Visible = false
             for _, data in ipairs(lines) do
@@ -615,7 +622,7 @@ local function createESP(targetPlayer)
         if rootPart then
             local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2.5, 0))
             if headOnScreen then
-                nameLabel.Visible = espSettings.showName
+                nameLabel.Visible = espEnabled and espSettings.showName
                 nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 40)
                 nameLabel.TextColor3 = espSettings.nameColor
                 nameLabel.TextSize = espSettings.nameSize
@@ -628,7 +635,7 @@ local function createESP(targetPlayer)
         
         -- ЗДОРОВЬЕ
         local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if espSettings.showHealth and humanoid and rootPart then
+        if espEnabled and espSettings.showHealth and humanoid and rootPart then
             local rootPos, rootOnScreen = camera:WorldToScreenPoint(rootPart.Position)
             if rootOnScreen then
                 local health = humanoid.Health
@@ -646,9 +653,25 @@ local function createESP(targetPlayer)
         else
             healthBg.Visible = false
         end
-    end)
+    end
     
+    -- ПОДКЛЮЧАЕМ ОБНОВЛЕНИЕ К RenderStepped
+    local connection = runService.RenderStepped:Connect(updateESP)
     table.insert(espConnections, connection)
+    
+    -- 👇 КЛЮЧЕВОЕ: ОБНОВЛЕНИЕ ПРИ ПЕРЕРОЖДЕНИИ
+    local characterAddedConnection
+    characterAddedConnection = targetPlayer.CharacterAdded:Connect(function(newChar)
+        -- Пересоздаём линии для нового персонажа
+        for _, data in ipairs(lines) do
+            data.frame.Visible = false
+        end
+        -- Обновляем всё в следующем кадре
+        task.wait(0.1)
+        updateESP()
+    end)
+    table.insert(espConnections, characterAddedConnection)
+    
     return espData
 end
 
@@ -704,7 +727,7 @@ Players.PlayerRemoving:Connect(function(targetPlayer)
     removeESP(targetPlayer)
 end)
 
--- ОБНОВЛЕНИЕ ПРИ РЕСПАВНЕ
+-- ОБНОВЛЕНИЕ ПРИ РЕСПАВНЕ (для самого игрока)
 local function onCharacterAdded()
     if espEnabled then
         task.wait(0.5)
@@ -714,14 +737,17 @@ end
 
 player.CharacterAdded:Connect(onCharacterAdded)
 
+-- ОБНОВЛЕНИЕ ПРИ РЕСПАВНЕ (для всех игроков)
 for _, targetPlayer in ipairs(Players:GetPlayers()) do
-    targetPlayer.CharacterAdded:Connect(function()
-        if espEnabled then
-            task.wait(0.5)
-            removeESP(targetPlayer)
-            createESP(targetPlayer)
-        end
-    end)
+    if targetPlayer ~= player then
+        targetPlayer.CharacterAdded:Connect(function()
+            if espEnabled then
+                task.wait(0.3)
+                removeESP(targetPlayer)
+                createESP(targetPlayer)
+            end
+        end)
+    end
 end
 
 -- ============================================
@@ -775,7 +801,7 @@ local HealthColorPicker = TabVisuals:CreateColorPicker({
 
 local NameToggle = TabVisuals:CreateToggle({
     Name = "Показывать имена",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "VisualNameToggle",
     Info = "Показывает имя игрока над головой",
     Callback = function(Value)
@@ -786,7 +812,7 @@ local NameToggle = TabVisuals:CreateToggle({
 
 local SkeletonToggle = TabVisuals:CreateToggle({
     Name = "Показывать скелет",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "VisualSkeletonToggle",
     Info = "Показывает скелет игрока (контур)",
     Callback = function(Value)
@@ -797,7 +823,7 @@ local SkeletonToggle = TabVisuals:CreateToggle({
 
 local HealthToggle = TabVisuals:CreateToggle({
     Name = "Показывать здоровье",
-    CurrentValue = true,
+    CurrentValue = false,
     Flag = "VisualHealthToggle",
     Info = "Показывает полоску здоровья над игроком",
     Callback = function(Value)
@@ -811,7 +837,7 @@ local NameSizeSlider = TabVisuals:CreateSlider({
     Range = {10, 40},
     Increment = 1,
     Suffix = "",
-    CurrentValue = 20,
+    CurrentValue = 14,
     Flag = "VisualNameSize",
     Info = "Регулирует размер имени",
     Callback = function(Value)
@@ -881,6 +907,11 @@ player.CharacterAdded:Connect(function()
         JumpToggle:Set(true)
     end
 end)
+
+-- ============================================
+-- ЗАГРУЗКА КОНФИГА
+-- ============================================
+Rayfield:LoadConfiguration()
 
 -- ============================================
 -- ВЫВОД В КОНСОЛЬ

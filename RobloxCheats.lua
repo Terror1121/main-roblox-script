@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch028",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch029",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (2D-СКЕЛЕТ СКВОЗЬ СТЕНЫ)
+-- СЕКЦИЯ: ESP (СКЕЛЕТ - R15 + R6)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -391,6 +391,25 @@ local espSettings = {
     healthSize = 3,
 }
 
+-- MAPPING для R6 (какие части тела соответствуют R15)
+local R6_MAPPING = {
+    ["UpperTorso"] = "Torso",
+    ["LowerTorso"] = "Torso",
+    ["LeftUpperArm"] = "Left Arm",
+    ["LeftLowerArm"] = "Left Arm",
+    ["LeftHand"] = "Left Arm",
+    ["RightUpperArm"] = "Right Arm",
+    ["RightLowerArm"] = "Right Arm",
+    ["RightHand"] = "Right Arm",
+    ["LeftUpperLeg"] = "Left Leg",
+    ["LeftLowerLeg"] = "Left Leg",
+    ["LeftFoot"] = "Left Leg",
+    ["RightUpperLeg"] = "Right Leg",
+    ["RightLowerLeg"] = "Right Leg",
+    ["RightFoot"] = "Right Leg",
+}
+
+-- СОЕДИНЕНИЯ (используем R15 названия, но через маппинг)
 local SKELETON_CONNECTIONS = {
     {"Head", "UpperTorso"},
     {"UpperTorso", "LowerTorso"},
@@ -448,6 +467,32 @@ local function clearAllESP()
     end
 end
 
+local function getPart(char, r15Name)
+    -- Сначала ищем R15 часть
+    local part = char:FindFirstChild(r15Name)
+    if part then return part end
+    
+    -- Если не нашли, ищем по маппингу для R6
+    local r6Name = R6_MAPPING[r15Name]
+    if r6Name then
+        part = char:FindFirstChild(r6Name)
+        if part then return part end
+    end
+    
+    -- Если всё равно не нашли, пробуем найти любую часть с похожим именем
+    for _, child in ipairs(char:GetChildren()) do
+        if child:IsA("BasePart") then
+            local name = child.Name:lower()
+            local search = r15Name:lower()
+            if name:find(search) or search:find(name) then
+                return child
+            end
+        end
+    end
+    
+    return nil
+end
+
 local function createESP(targetPlayer)
     if targetPlayer == player then return end
     if espObjects[targetPlayer] then return end
@@ -469,16 +514,20 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- ЛИНИИ СКЕЛЕТА (НЕПРОЗРАЧНЫЕ)
+    -- ЛИНИИ СКЕЛЕТА
     for _, connection in ipairs(SKELETON_CONNECTIONS) do
         local line = Instance.new("Frame")
         line.Size = UDim2.new(0, 1, 0, 3)
         line.BackgroundColor3 = espSettings.boxColor
-        line.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+        line.BackgroundTransparency = 0
         line.BorderSizePixel = 0
         line.Visible = false
         line.Parent = espGui
-        table.insert(lines, {frame = line, part1 = connection[1], part2 = connection[2]})
+        table.insert(lines, {
+            frame = line,
+            part1 = connection[1],
+            part2 = connection[2]
+        })
     end
     espData.lines = lines
     
@@ -496,7 +545,7 @@ local function createESP(targetPlayer)
     local healthBar = Instance.new("Frame")
     healthBar.Size = UDim2.new(1, 0, 1, 0)
     healthBar.BackgroundColor3 = espSettings.healthColor
-    healthBar.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+    healthBar.BackgroundTransparency = 0
     healthBar.BorderSizePixel = 0
     healthBar.Parent = healthBg
     espData.healthBar = healthBar
@@ -526,10 +575,10 @@ local function createESP(targetPlayer)
         local camera = workspace.CurrentCamera
         if not camera then return end
         
-        -- Обновляем линии
+        -- Обновляем линии скелета
         for _, data in ipairs(lines) do
-            local part1 = char:FindFirstChild(data.part1)
-            local part2 = char:FindFirstChild(data.part2)
+            local part1 = getPart(char, data.part1)
+            local part2 = getPart(char, data.part2)
             
             if part1 and part2 then
                 local pos1, onScreen1 = camera:WorldToScreenPoint(part1.Position)
@@ -549,7 +598,7 @@ local function createESP(targetPlayer)
                         data.frame.Rotation = math.deg(math.atan2(dy, dx))
                         data.frame.Visible = true
                         data.frame.BackgroundColor3 = espSettings.boxColor
-                        data.frame.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+                        data.frame.BackgroundTransparency = 0
                     else
                         data.frame.Visible = false
                     end
@@ -592,7 +641,6 @@ local function createESP(targetPlayer)
                 healthBg.Position = UDim2.new(0, rootPos.X - 30, 0, rootPos.Y + 20)
                 healthBar.Size = UDim2.new(percent, 0, 1, 0)
                 healthBar.BackgroundColor3 = espSettings.healthColor
-                healthBar.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
             else
                 healthBg.Visible = false
             end
@@ -634,12 +682,12 @@ local function updateESPSettings()
         if espData.lines then
             for _, data in ipairs(espData.lines) do
                 data.frame.BackgroundColor3 = espSettings.boxColor
-                data.frame.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+                data.frame.BackgroundTransparency = 0
             end
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor
-            espData.healthBar.BackgroundTransparency = 0  -- 👈 НЕПРОЗРАЧНЫЙ
+            espData.healthBar.BackgroundTransparency = 0
         end
     end
 end

@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch045",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch046",
 })
 
 -- ============================================
@@ -396,25 +396,97 @@ local espSettings = {
     tracerThickness = 1,
 }
 
--- Функция для Chams
-local function applyChams(char, state)
+-- Храним оригинальные свойства частей для Chams
+local originalProperties = {}
+
+-- ============================================
+-- CHAMS ФУНКЦИИ
+-- ============================================
+
+local function saveOriginalProperties(part)
+    if not originalProperties[part] then
+        originalProperties[part] = {
+            Material = part.Material,
+            Color = part.Color,
+            Transparency = part.Transparency,
+        }
+    end
+end
+
+local function applyChamsToPart(part, state)
+    if not part or not part:IsA("BasePart") then return end
+    
+    if state then
+        saveOriginalProperties(part)
+        part.Material = Enum.Material.Neon
+        part.Color = espSettings.chamsColor
+        part.Transparency = espSettings.chamsTransparency
+    else
+        if originalProperties[part] then
+            part.Material = originalProperties[part].Material
+            part.Color = originalProperties[part].Color
+            part.Transparency = originalProperties[part].Transparency
+            originalProperties[part] = nil
+        else
+            part.Material = Enum.Material.Plastic
+            part.Color = Color3.fromRGB(255, 255, 255)
+            part.Transparency = 0
+        end
+    end
+end
+
+local function applyChamsToCharacter(char, state)
     if not char then return end
+    
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
-            if state then
-                part.Material = Enum.Material.Neon
-                part.Color = espSettings.chamsColor
-                part.Transparency = espSettings.chamsTransparency
-            else
-                part.Material = Enum.Material.Plastic
-                part.Color = Color3.fromRGB(255, 255, 255)
-                part.Transparency = 0
+            applyChamsToPart(part, state)
+        end
+    end
+    
+    local accessories = char:FindFirstChild("Accessories")
+    if accessories then
+        for _, accessory in ipairs(accessories:GetChildren()) do
+            if accessory:IsA("Accessory") then
+                for _, part in ipairs(accessory:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        applyChamsToPart(part, state)
+                    end
+                end
             end
         end
     end
 end
 
--- Функция для Tracers (используем Drawing)
+local function updateAllChams()
+    if espEnabled and espSettings.showChams then
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer ~= player then
+                local char = targetPlayer.Character
+                if char then
+                    applyChamsToCharacter(char, true)
+                end
+            end
+        end
+    end
+end
+
+local function clearAllChams()
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do
+        if targetPlayer ~= player then
+            local char = targetPlayer.Character
+            if char then
+                applyChamsToCharacter(char, false)
+            end
+        end
+    end
+    originalProperties = {}
+end
+
+-- ============================================
+-- TRACERS ФУНКЦИИ (исправленные - показывают за экраном)
+-- ============================================
+
 local tracerObjects = {}
 local tracerConnection = nil
 
@@ -460,12 +532,54 @@ local function updateTracers()
                 if char and char:FindFirstChild("HumanoidRootPart") then
                     local rootPart = char.HumanoidRootPart
                     local pos, onScreen = camera:WorldToScreenPoint(rootPart.Position)
+                    
+                    -- Всегда показываем линию, даже если игрок за экраном
+                    tracer.Visible = true
+                    tracer.From = Vector2.new(center.X, center.Y)
+                    
+                    -- Если игрок на экране - линия к нему
                     if onScreen then
-                        tracer.Visible = true
-                        tracer.From = Vector2.new(center.X, center.Y)
                         tracer.To = Vector2.new(pos.X, pos.Y)
                     else
-                        tracer.Visible = false
+                        -- Если игрок за экраном - линия к краю экрана в направлении игрока
+                        local direction = (rootPart.Position - camera.CFrame.Position).Unit
+                        local lookVector = camera.CFrame.LookVector
+                        local rightVector = camera.CFrame.RightVector
+                        local upVector = camera.CFrame.UpVector
+                        
+                        -- Проекция направления на плоскость экрана
+                        local screenDir = Vector2.new(
+                            direction:Dot(rightVector),
+                            direction:Dot(upVector)
+                        )
+                        
+                        if screenDir.Magnitude > 0 then
+                            screenDir = screenDir.Unit
+                            -- Находим точку на краю экрана
+                            local aspectRatio = viewportSize.X / viewportSize.Y
+                            local edgeX, edgeY
+                            
+                            -- Определяем ближайший край
+                            local angle = math.atan2(screenDir.Y, screenDir.X)
+                            local absAngle = math.abs(angle)
+                            
+                            if absAngle <= math.atan(1/aspectRatio) then
+                                -- Правый или левый край
+                                edgeX = math.sign(screenDir.X) * viewportSize.X / 2
+                                edgeY = math.tan(angle) * edgeX
+                            else
+                                -- Верхний или нижний край
+                                edgeY = math.sign(screenDir.Y) * viewportSize.Y / 2
+                                edgeX = edgeY / math.tan(angle)
+                            end
+                            
+                            tracer.To = Vector2.new(
+                                viewportSize.X / 2 + edgeX,
+                                viewportSize.Y / 2 + edgeY
+                            )
+                        else
+                            tracer.To = center
+                        end
                     end
                 else
                     tracer.Visible = false
@@ -489,7 +603,10 @@ local function toggleTracers(state)
     end
 end
 
--- ИСПРАВЛЕННЫЙ МАППИНГ
+-- ============================================
+-- ESP ФУНКЦИИ
+-- ============================================
+
 local function getPart(char, partName)
     if not char or not partName then return nil end
     
@@ -556,7 +673,6 @@ local function removeESP(targetPlayer)
         if espData.healthBar then espData.healthBar:Destroy() end
         espObjects[targetPlayer] = nil
     end
-    -- Удаляем tracer
     if tracerObjects[targetPlayer] then
         tracerObjects[targetPlayer]:Remove()
         tracerObjects[targetPlayer] = nil
@@ -581,6 +697,33 @@ local function clearAllESP()
         tracerConnection:Disconnect()
         tracerConnection = nil
     end
+    clearAllChams()
+end
+
+local function setupCharacterMonitoring(char)
+    if not char then return end
+    
+    if char._chamsConnections then
+        for _, conn in ipairs(char._chamsConnections) do
+            conn:Disconnect()
+        end
+    end
+    char._chamsConnections = {}
+    
+    local descendantAddedConnection = char.DescendantAdded:Connect(function(part)
+        if espEnabled and espSettings.showChams and part:IsA("BasePart") then
+            applyChamsToPart(part, true)
+        end
+    end)
+    
+    local descendantRemovingConnection = char.DescendantRemoving:Connect(function(part)
+        if part:IsA("BasePart") and originalProperties[part] then
+            originalProperties[part] = nil
+        end
+    end)
+    
+    table.insert(char._chamsConnections, descendantAddedConnection)
+    table.insert(char._chamsConnections, descendantRemovingConnection)
 end
 
 local function createESP(targetPlayer)
@@ -592,7 +735,6 @@ local function createESP(targetPlayer)
     local espData = {}
     local lines = {}
     
-    -- ИМЯ
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0, 200, 0, 30)
     nameLabel.BackgroundTransparency = 1
@@ -604,7 +746,6 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- ЛИНИИ
     for _, connection in ipairs(SKELETON_CONNECTIONS) do
         local line = Instance.new("Frame")
         line.Size = UDim2.new(0, 1, 0, 3)
@@ -621,7 +762,6 @@ local function createESP(targetPlayer)
     end
     espData.lines = lines
     
-    -- ЗДОРОВЬЕ
     local healthBg = Instance.new("Frame")
     healthBg.Size = UDim2.new(0, 80, 0, 10)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -642,19 +782,21 @@ local function createESP(targetPlayer)
     
     espObjects[targetPlayer] = espData
     
-    -- Применяем Chams если включены
-    if espSettings.showChams then
-        local char = targetPlayer.Character
-        if char then
-            applyChams(char, true)
+    local char = targetPlayer.Character
+    if char then
+        if espSettings.showChams then
+            applyChamsToCharacter(char, true)
         end
-        targetPlayer.CharacterAdded:Connect(function(character)
-            task.wait(0.1)
-            if espSettings.showChams then
-                applyChams(character, true)
-            end
-        end)
+        setupCharacterMonitoring(char)
     end
+    
+    targetPlayer.CharacterAdded:Connect(function(character)
+        task.wait(0.1)
+        if espEnabled and espSettings.showChams then
+            applyChamsToCharacter(character, true)
+        end
+        setupCharacterMonitoring(character)
+    end)
     
     local connection = runService.RenderStepped:Connect(function()
         if not espEnabled then
@@ -752,15 +894,6 @@ local function createESP(targetPlayer)
     
     table.insert(espConnections, connection)
     
-    targetPlayer.CharacterAdded:Connect(function(character)
-        if espEnabled then
-            task.wait(0.1)
-            if espSettings.showChams then
-                applyChams(character, true)
-            end
-        end
-    end)
-    
     return espData
 end
 
@@ -774,6 +907,9 @@ local function refreshAllESP()
         end
         if espSettings.showTracers then
             toggleTracers(true)
+        end
+        if espSettings.showChams then
+            updateAllChams()
         end
     end
 end
@@ -806,27 +942,25 @@ local function updateVisualsSettings()
         end
     end
     
-    -- Обновляем Chams
     if espEnabled then
-        for _, targetPlayer in ipairs(Players:GetPlayers()) do
-            if targetPlayer ~= player then
-                local char = targetPlayer.Character
-                if char then
-                    applyChams(char, espSettings.showChams)
-                end
-            end
+        if espSettings.showChams then
+            updateAllChams()
+        else
+            clearAllChams()
         end
-    end
-    
-    -- Обновляем Tracers
-    if espEnabled and espSettings.showTracers then
-        toggleTracers(true)
-    elseif not espSettings.showTracers then
-        toggleTracers(false)
+        
+        if espSettings.showTracers then
+            toggleTracers(true)
+        else
+            toggleTracers(false)
+        end
     end
 end
 
--- ОБРАБОТЧИКИ ПОЯВЛЕНИЯ/УХОДА ИГРОКОВ
+-- ============================================
+-- ОБРАБОТЧИКИ ИГРОКОВ
+-- ============================================
+
 Players.PlayerAdded:Connect(function(targetPlayer)
     if espEnabled then
         task.wait(0.5)
@@ -849,6 +983,23 @@ player.CharacterAdded:Connect(function()
     if espEnabled then
         task.wait(0.5)
         refreshAllESP()
+    end
+    task.wait(0.5)
+    if flying then
+        enableFly()
+        FlyToggle:Set(true)
+    end
+    if noclipEnabled then
+        disableNoclip()
+        task.wait(0.1)
+        enableNoclip()
+        NoclipToggle:Set(true)
+    end
+    if jumpEnabled then
+        disableJump()
+        task.wait(0.1)
+        enableJump()
+        JumpToggle:Set(true)
     end
 end)
 
@@ -1008,7 +1159,7 @@ local TracersToggle = TabVisuals:CreateToggle({
     Name = "Tracers (линии к игрокам)",
     CurrentValue = false,
     Flag = "TracersToggle",
-    Info = "Рисует линии от тебя к игрокам",
+    Info = "Рисует линии от тебя к игрокам\nПоказывает даже если игрок за экраном",
     Callback = function(Value)
         espSettings.showTracers = Value
         updateVisualsSettings()
@@ -1080,29 +1231,6 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
         toggleNoclip()
         NoclipToggle:Set(noclipEnabled)
         print("🔑 Клавиша Noclip нажата, noclipEnabled:", noclipEnabled)
-    end
-end)
-
--- ============================================
--- ВОССТАНОВЛЕНИЕ ПРИ РЕСПАВНЕ
--- ============================================
-player.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    if flying then
-        enableFly()
-        FlyToggle:Set(true)
-    end
-    if noclipEnabled then
-        disableNoclip()
-        task.wait(0.1)
-        enableNoclip()
-        NoclipToggle:Set(true)
-    end
-    if jumpEnabled then
-        disableJump()
-        task.wait(0.1)
-        enableJump()
-        JumpToggle:Set(true)
     end
 end)
 

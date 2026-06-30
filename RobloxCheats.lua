@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch046",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch-047",
 })
 
 -- ============================================
@@ -398,6 +398,8 @@ local espSettings = {
 
 -- Храним оригинальные свойства частей для Chams
 local originalProperties = {}
+-- Храним подключения для мониторинга персонажей
+local charConnections = {}
 
 -- ============================================
 -- CHAMS ФУНКЦИИ
@@ -533,21 +535,17 @@ local function updateTracers()
                     local rootPart = char.HumanoidRootPart
                     local pos, onScreen = camera:WorldToScreenPoint(rootPart.Position)
                     
-                    -- Всегда показываем линию, даже если игрок за экраном
                     tracer.Visible = true
                     tracer.From = Vector2.new(center.X, center.Y)
                     
-                    -- Если игрок на экране - линия к нему
                     if onScreen then
                         tracer.To = Vector2.new(pos.X, pos.Y)
                     else
-                        -- Если игрок за экраном - линия к краю экрана в направлении игрока
                         local direction = (rootPart.Position - camera.CFrame.Position).Unit
                         local lookVector = camera.CFrame.LookVector
                         local rightVector = camera.CFrame.RightVector
                         local upVector = camera.CFrame.UpVector
                         
-                        -- Проекция направления на плоскость экрана
                         local screenDir = Vector2.new(
                             direction:Dot(rightVector),
                             direction:Dot(upVector)
@@ -555,20 +553,16 @@ local function updateTracers()
                         
                         if screenDir.Magnitude > 0 then
                             screenDir = screenDir.Unit
-                            -- Находим точку на краю экрана
                             local aspectRatio = viewportSize.X / viewportSize.Y
                             local edgeX, edgeY
                             
-                            -- Определяем ближайший край
                             local angle = math.atan2(screenDir.Y, screenDir.X)
                             local absAngle = math.abs(angle)
                             
                             if absAngle <= math.atan(1/aspectRatio) then
-                                -- Правый или левый край
                                 edgeX = math.sign(screenDir.X) * viewportSize.X / 2
                                 edgeY = math.tan(angle) * edgeX
                             else
-                                -- Верхний или нижний край
                                 edgeY = math.sign(screenDir.Y) * viewportSize.Y / 2
                                 edgeX = edgeY / math.tan(angle)
                             end
@@ -677,6 +671,13 @@ local function removeESP(targetPlayer)
         tracerObjects[targetPlayer]:Remove()
         tracerObjects[targetPlayer] = nil
     end
+    -- Очищаем подключения для этого игрока
+    if charConnections[targetPlayer] then
+        for _, conn in ipairs(charConnections[targetPlayer]) do
+            conn:Disconnect()
+        end
+        charConnections[targetPlayer] = nil
+    end
 end
 
 local function clearAllESP()
@@ -700,15 +701,19 @@ local function clearAllESP()
     clearAllChams()
 end
 
-local function setupCharacterMonitoring(char)
+local function setupCharacterMonitoring(char, targetPlayer)
     if not char then return end
     
-    if char._chamsConnections then
-        for _, conn in ipairs(char._chamsConnections) do
-            conn:Disconnect()
-        end
+    -- Создаем таблицу для подключений если её нет
+    if not charConnections[targetPlayer] then
+        charConnections[targetPlayer] = {}
     end
-    char._chamsConnections = {}
+    
+    -- Очищаем старые подключения
+    for _, conn in ipairs(charConnections[targetPlayer]) do
+        conn:Disconnect()
+    end
+    charConnections[targetPlayer] = {}
     
     local descendantAddedConnection = char.DescendantAdded:Connect(function(part)
         if espEnabled and espSettings.showChams and part:IsA("BasePart") then
@@ -722,8 +727,8 @@ local function setupCharacterMonitoring(char)
         end
     end)
     
-    table.insert(char._chamsConnections, descendantAddedConnection)
-    table.insert(char._chamsConnections, descendantRemovingConnection)
+    table.insert(charConnections[targetPlayer], descendantAddedConnection)
+    table.insert(charConnections[targetPlayer], descendantRemovingConnection)
 end
 
 local function createESP(targetPlayer)
@@ -787,7 +792,7 @@ local function createESP(targetPlayer)
         if espSettings.showChams then
             applyChamsToCharacter(char, true)
         end
-        setupCharacterMonitoring(char)
+        setupCharacterMonitoring(char, targetPlayer)
     end
     
     targetPlayer.CharacterAdded:Connect(function(character)
@@ -795,7 +800,7 @@ local function createESP(targetPlayer)
         if espEnabled and espSettings.showChams then
             applyChamsToCharacter(character, true)
         end
-        setupCharacterMonitoring(character)
+        setupCharacterMonitoring(character, targetPlayer)
     end)
     
     local connection = runService.RenderStepped:Connect(function()

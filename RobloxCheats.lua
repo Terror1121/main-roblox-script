@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch023",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch024",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (КОНТУР ИГРОКА - ИСПРАВЛЕННЫЙ)
+-- СЕКЦИЯ: ESP (КОНТУР СНАРУЖИ ИГРОКА)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -418,7 +418,7 @@ local function createOutline(char, rootPart, head, color)
     
     for i = 1, 4 do
         local line = Instance.new("Part")
-        line.Size = Vector3.new(3, 0.1, 0.1)
+        line.Size = Vector3.new(3, 0.15, 0.15)
         line.Anchored = true
         line.CanCollide = false
         line.Material = Enum.Material.SmoothPlastic
@@ -437,21 +437,25 @@ local function updateOutline(group, rootPart, head, color)
     local headPos = head and head.Position or rootPart.Position + Vector3.new(0, 2.5, 0)
     
     local height = (headPos - rootPart.Position).Magnitude
-    local width = height * 0.4
+    local width = height * 0.45  -- Немного шире
     
     local children = group:GetChildren()
     if #children >= 4 then
-        children[1].Size = Vector3.new(width, 0.1, 0.1)
-        children[1].Position = rootPos + Vector3.new(0, -height/2, 0)
+        -- Нижняя линия (под ногами)
+        children[1].Size = Vector3.new(width, 0.15, 0.15)
+        children[1].Position = rootPos + Vector3.new(0, -height/2 - 0.3, 0)
         
-        children[2].Size = Vector3.new(0.1, height, 0.1)
-        children[2].Position = rootPos + Vector3.new(-width/2, 0, 0)
+        -- Левая линия (слева от игрока)
+        children[2].Size = Vector3.new(0.15, height + 0.6, 0.15)
+        children[2].Position = rootPos + Vector3.new(-width/2 - 0.3, 0, 0)
         
-        children[3].Size = Vector3.new(0.1, height, 0.1)
-        children[3].Position = rootPos + Vector3.new(width/2, 0, 0)
+        -- Правая линия (справа от игрока)
+        children[3].Size = Vector3.new(0.15, height + 0.6, 0.15)
+        children[3].Position = rootPos + Vector3.new(width/2 + 0.3, 0, 0)
         
-        children[4].Size = Vector3.new(width, 0.1, 0.1)
-        children[4].Position = rootPos + Vector3.new(0, height/2, 0)
+        -- Верхняя линия (над головой)
+        children[4].Size = Vector3.new(width, 0.15, 0.15)
+        children[4].Position = rootPos + Vector3.new(0, height/2 + 0.3, 0)
         
         for _, part in ipairs(children) do
             part.Color = color
@@ -500,7 +504,6 @@ local function createESP(targetPlayer)
     
     local outlineConnection = runService.RenderStepped:Connect(function()
         if not espEnabled or not espSettings.showBox then
-            -- Скрываем контур делая его прозрачным
             if outlineGroup then
                 for _, part in ipairs(outlineGroup:GetChildren()) do
                     if part:IsA("Part") then
@@ -536,7 +539,6 @@ local function createESP(targetPlayer)
             return
         end
         
-        -- Делаем контур видимым
         if outlineGroup then
             for _, part in ipairs(outlineGroup:GetChildren()) do
                 if part:IsA("Part") then
@@ -553,7 +555,7 @@ local function createESP(targetPlayer)
     local healthBillboard = Instance.new("BillboardGui")
     healthBillboard.Size = UDim2.new(0, 100, 0, 10)
     healthBillboard.Adornee = rootPart
-    healthBillboard.StudsOffset = Vector3.new(0, -2, 0)
+    healthBillboard.StudsOffset = Vector3.new(0, -2.5, 0)
     healthBillboard.AlwaysOnTop = true
     healthBillboard.ResetOnSpawn = false
     healthBillboard.Parent = char

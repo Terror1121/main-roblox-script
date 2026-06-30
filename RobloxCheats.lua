@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch044",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch045",
 })
 
 -- ============================================
@@ -373,7 +373,7 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ВИЗУАЛ (БЫСТРАЯ ВЕРСИЯ)
+-- СЕКЦИЯ: ВИЗУАЛ
 -- ============================================
 local espEnabled = false
 local espConnections = {}
@@ -384,21 +384,118 @@ local espSettings = {
     showName = false,
     showSkeleton = false,
     showHealth = false,
+    showChams = false,
+    showTracers = false,
     nameColor = Color3.fromRGB(255, 255, 255),
     skeletonColor = Color3.fromRGB(0, 255, 255),
     healthColor = Color3.fromRGB(0, 255, 0),
+    chamsColor = Color3.fromRGB(255, 0, 0),
+    tracerColor = Color3.fromRGB(0, 255, 0),
     nameSize = 14,
+    chamsTransparency = 0.3,
+    tracerThickness = 1,
 }
+
+-- Функция для Chams
+local function applyChams(char, state)
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            if state then
+                part.Material = Enum.Material.Neon
+                part.Color = espSettings.chamsColor
+                part.Transparency = espSettings.chamsTransparency
+            else
+                part.Material = Enum.Material.Plastic
+                part.Color = Color3.fromRGB(255, 255, 255)
+                part.Transparency = 0
+            end
+        end
+    end
+end
+
+-- Функция для Tracers (используем Drawing)
+local tracerObjects = {}
+local tracerConnection = nil
+
+local function createTracers()
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do
+        if targetPlayer ~= player and not tracerObjects[targetPlayer] then
+            local tracer = Drawing.new("Line")
+            tracer.Visible = false
+            tracer.Color = espSettings.tracerColor
+            tracer.Thickness = espSettings.tracerThickness
+            tracer.Transparency = 1
+            tracerObjects[targetPlayer] = tracer
+        end
+    end
+end
+
+local function removeTracers()
+    for _, tracer in pairs(tracerObjects) do
+        tracer:Remove()
+    end
+    tracerObjects = {}
+end
+
+local function updateTracers()
+    if not espEnabled or not espSettings.showTracers then
+        for _, tracer in pairs(tracerObjects) do
+            tracer.Visible = false
+        end
+        return
+    end
+    
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    
+    local viewportSize = camera.ViewportSize
+    local center = Vector2.new(viewportSize.X / 2, viewportSize.Y)
+    
+    for _, targetPlayer in ipairs(Players:GetPlayers()) do
+        if targetPlayer ~= player then
+            local tracer = tracerObjects[targetPlayer]
+            if tracer then
+                local char = targetPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local rootPart = char.HumanoidRootPart
+                    local pos, onScreen = camera:WorldToScreenPoint(rootPart.Position)
+                    if onScreen then
+                        tracer.Visible = true
+                        tracer.From = Vector2.new(center.X, center.Y)
+                        tracer.To = Vector2.new(pos.X, pos.Y)
+                    else
+                        tracer.Visible = false
+                    end
+                else
+                    tracer.Visible = false
+                end
+            end
+        end
+    end
+end
+
+local function toggleTracers(state)
+    if state then
+        createTracers()
+        if tracerConnection then tracerConnection:Disconnect() end
+        tracerConnection = runService.RenderStepped:Connect(updateTracers)
+    else
+        removeTracers()
+        if tracerConnection then
+            tracerConnection:Disconnect()
+            tracerConnection = nil
+        end
+    end
+end
 
 -- ИСПРАВЛЕННЫЙ МАППИНГ
 local function getPart(char, partName)
     if not char or not partName then return nil end
     
-    -- Прямой поиск
     local part = char:FindFirstChild(partName)
     if part then return part end
     
-    -- Специальные случаи для R6
     if partName == "UpperTorso" or partName == "LowerTorso" then
         return char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart")
     elseif partName == "LeftUpperArm" or partName == "LeftLowerArm" or partName == "LeftHand" then
@@ -459,6 +556,11 @@ local function removeESP(targetPlayer)
         if espData.healthBar then espData.healthBar:Destroy() end
         espObjects[targetPlayer] = nil
     end
+    -- Удаляем tracer
+    if tracerObjects[targetPlayer] then
+        tracerObjects[targetPlayer]:Remove()
+        tracerObjects[targetPlayer] = nil
+    end
 end
 
 local function clearAllESP()
@@ -473,6 +575,11 @@ local function clearAllESP()
     if espGui then
         espGui:Destroy()
         espGui = nil
+    end
+    removeTracers()
+    if tracerConnection then
+        tracerConnection:Disconnect()
+        tracerConnection = nil
     end
 end
 
@@ -534,6 +641,20 @@ local function createESP(targetPlayer)
     espData.healthBar = healthBar
     
     espObjects[targetPlayer] = espData
+    
+    -- Применяем Chams если включены
+    if espSettings.showChams then
+        local char = targetPlayer.Character
+        if char then
+            applyChams(char, true)
+        end
+        targetPlayer.CharacterAdded:Connect(function(character)
+            task.wait(0.1)
+            if espSettings.showChams then
+                applyChams(character, true)
+            end
+        end)
+    end
     
     local connection = runService.RenderStepped:Connect(function()
         if not espEnabled then
@@ -631,9 +752,12 @@ local function createESP(targetPlayer)
     
     table.insert(espConnections, connection)
     
-    targetPlayer.CharacterAdded:Connect(function()
+    targetPlayer.CharacterAdded:Connect(function(character)
         if espEnabled then
             task.wait(0.1)
+            if espSettings.showChams then
+                applyChams(character, true)
+            end
         end
     end)
     
@@ -647,6 +771,9 @@ local function refreshAllESP()
             if targetPlayer ~= player then
                 createESP(targetPlayer)
             end
+        end
+        if espSettings.showTracers then
+            toggleTracers(true)
         end
     end
 end
@@ -678,6 +805,25 @@ local function updateVisualsSettings()
             espData.healthBar.BackgroundTransparency = 0
         end
     end
+    
+    -- Обновляем Chams
+    if espEnabled then
+        for _, targetPlayer in ipairs(Players:GetPlayers()) do
+            if targetPlayer ~= player then
+                local char = targetPlayer.Character
+                if char then
+                    applyChams(char, espSettings.showChams)
+                end
+            end
+        end
+    end
+    
+    -- Обновляем Tracers
+    if espEnabled and espSettings.showTracers then
+        toggleTracers(true)
+    elseif not espSettings.showTracers then
+        toggleTracers(false)
+    end
 end
 
 -- ОБРАБОТЧИКИ ПОЯВЛЕНИЯ/УХОДА ИГРОКОВ
@@ -685,20 +831,24 @@ Players.PlayerAdded:Connect(function(targetPlayer)
     if espEnabled then
         task.wait(0.5)
         createESP(targetPlayer)
-        if espCounterEnabled then updateCounterText() end
+        if espSettings.showTracers then
+            createTracers()
+        end
     end
 end)
 
 Players.PlayerRemoving:Connect(function(targetPlayer)
     removeESP(targetPlayer)
-    if espCounterEnabled then updateCounterText() end
+    if tracerObjects[targetPlayer] then
+        tracerObjects[targetPlayer]:Remove()
+        tracerObjects[targetPlayer] = nil
+    end
 end)
 
 player.CharacterAdded:Connect(function()
     if espEnabled then
         task.wait(0.5)
         refreshAllESP()
-        if espCounterEnabled then updateCounterText() end
     end
 end)
 
@@ -709,7 +859,6 @@ for _, targetPlayer in ipairs(Players:GetPlayers()) do
                 task.wait(0.3)
                 removeESP(targetPlayer)
                 createESP(targetPlayer)
-                if espCounterEnabled then updateCounterText() end
             end
         end)
     end
@@ -812,21 +961,85 @@ local NameSizeSlider = TabVisuals:CreateSlider({
 })
 
 -- ============================================
--- СЧЁТЧИК ESP В МЕНЮ
+-- CHAMS В СЕКЦИИ ESP
 -- ============================================
-local TestESPToggle = TabVisuals:CreateToggle({
-    Name = "TestESP",
+
+local ChamsToggle = TabVisuals:CreateToggle({
+    Name = "Chams (подсветка через стены)",
     CurrentValue = false,
-    Flag = "TestESPToggle",
-    Info = "Показывает в правом нижнем углу количество игроков в ESP",
+    Flag = "ChamsToggle",
+    Info = "Подсвечивает игроков через стены\nРаботает только на некоторых играх",
     Callback = function(Value)
-        espCounterEnabled = Value
-        if Value then
-            createCounterLabel()
-        else
-            if espCounterLabel then
-                espCounterLabel.Visible = false
-            end
+        espSettings.showChams = Value
+        updateVisualsSettings()
+    end,
+})
+
+local ChamsColorPicker = TabVisuals:CreateColorPicker({
+    Name = "Цвет Chams",
+    Color = Color3.fromRGB(255, 0, 0),
+    Flag = "ChamsColor",
+    Info = "Выбери цвет подсветки",
+    Callback = function(Color)
+        espSettings.chamsColor = Color
+        updateVisualsSettings()
+    end,
+})
+
+local ChamsTransparencySlider = TabVisuals:CreateSlider({
+    Name = "Прозрачность Chams",
+    Range = {0, 1},
+    Increment = 0.05,
+    Suffix = "",
+    CurrentValue = 0.3,
+    Flag = "ChamsTransparency",
+    Info = "Регулирует прозрачность подсветки",
+    Callback = function(Value)
+        espSettings.chamsTransparency = Value
+        updateVisualsSettings()
+    end,
+})
+
+-- ============================================
+-- TRACERS В СЕКЦИИ ESP
+-- ============================================
+
+local TracersToggle = TabVisuals:CreateToggle({
+    Name = "Tracers (линии к игрокам)",
+    CurrentValue = false,
+    Flag = "TracersToggle",
+    Info = "Рисует линии от тебя к игрокам",
+    Callback = function(Value)
+        espSettings.showTracers = Value
+        updateVisualsSettings()
+    end,
+})
+
+local TracersColorPicker = TabVisuals:CreateColorPicker({
+    Name = "Цвет Tracers",
+    Color = Color3.fromRGB(0, 255, 0),
+    Flag = "TracersColor",
+    Info = "Выбери цвет линий",
+    Callback = function(Color)
+        espSettings.tracerColor = Color
+        for _, tracer in pairs(tracerObjects) do
+            tracer.Color = Color
+        end
+    end,
+})
+
+local TracersThicknessSlider = TabVisuals:CreateSlider({
+    Name = "Толщина Tracers",
+    Range = {1, 5},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 1,
+    Flag = "TracersThickness",
+    Info = "Регулирует толщину линий",
+    Callback = function(Value)
+        espSettings.tracerThickness = Value
+        for _, tracer in pairs(tracerObjects) do
+            tracer.Thickness = Value
         end
     end,
 })
@@ -892,63 +1105,6 @@ player.CharacterAdded:Connect(function()
         JumpToggle:Set(true)
     end
 end)
-
--- ============================================
--- СЧЁТЧИК ESP
--- ============================================
-local espCounterEnabled = false
-local espCounterLabel = nil
-
-local function createCounterLabel()
-    if espCounterLabel then return end
-    
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "ESPCounter"
-    screenGui.Parent = player.PlayerGui
-    screenGui.ResetOnSpawn = false
-    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    screenGui.DisplayOrder = 999
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 250, 0, 30)
-    label.Position = UDim2.new(1, -260, 1, -40)
-    label.BackgroundTransparency = 1
-    label.Text = "ESP: 0/0"
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 16
-    label.Font = Enum.Font.GothamBold
-    label.TextXAlignment = Enum.TextXAlignment.Right
-    label.Parent = screenGui
-    espCounterLabel = label
-    
-    game:GetService("RunService").Heartbeat:Connect(function()
-        if not espCounterEnabled then
-            if label then label.Visible = false end
-            return
-        end
-        label.Visible = true
-        local totalPlayers = #Players:GetPlayers()
-        local espCount = 0
-        for _, targetPlayer in ipairs(Players:GetPlayers()) do
-            if targetPlayer ~= player and espObjects[targetPlayer] then
-                espCount = espCount + 1
-            end
-        end
-        label.Text = "ESP: " .. espCount .. "/" .. totalPlayers
-    end)
-end
-
-local function updateCounterText()
-    if not espCounterLabel then return end
-    local totalPlayers = #Players:GetPlayers()
-    local espCount = 0
-    for _, targetPlayer in ipairs(Players:GetPlayers()) do
-        if targetPlayer ~= player and espObjects[targetPlayer] then
-            espCount = espCount + 1
-        end
-    end
-    espCounterLabel.Text = "ESP: " .. espCount .. "/" .. totalPlayers
-end
 
 -- ============================================
 -- ВЫВОД В КОНСОЛЬ

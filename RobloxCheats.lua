@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch-047",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch-048",
 })
 
 -- ============================================
@@ -396,13 +396,33 @@ local espSettings = {
     tracerThickness = 1,
 }
 
+-- Список частей тела для Chams (только основные части скелета)
+local CHAMS_PARTS = {
+    "Head",
+    "UpperTorso",
+    "LowerTorso",
+    "LeftUpperArm",
+    "LeftLowerArm",
+    "LeftHand",
+    "RightUpperArm",
+    "RightLowerArm",
+    "RightHand",
+    "LeftUpperLeg",
+    "LeftLowerLeg",
+    "LeftFoot",
+    "RightUpperLeg",
+    "RightLowerLeg",
+    "RightFoot",
+    "HumanoidRootPart"
+}
+
 -- Храним оригинальные свойства частей для Chams
 local originalProperties = {}
 -- Храним подключения для мониторинга персонажей
 local charConnections = {}
 
 -- ============================================
--- CHAMS ФУНКЦИИ
+-- CHAMS ФУНКЦИИ (исправленные - только основные части)
 -- ============================================
 
 local function saveOriginalProperties(part)
@@ -417,6 +437,18 @@ end
 
 local function applyChamsToPart(part, state)
     if not part or not part:IsA("BasePart") then return end
+    
+    -- Проверяем, является ли часть частью тела (по имени)
+    local isBodyPart = false
+    for _, name in ipairs(CHAMS_PARTS) do
+        if part.Name == name then
+            isBodyPart = true
+            break
+        end
+    end
+    
+    -- Если это не часть тела - пропускаем
+    if not isBodyPart then return end
     
     if state then
         saveOriginalProperties(part)
@@ -440,20 +472,21 @@ end
 local function applyChamsToCharacter(char, state)
     if not char then return end
     
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
+    -- Применяем только к основным частям тела
+    for _, partName in ipairs(CHAMS_PARTS) do
+        local part = char:FindFirstChild(partName)
+        if part and part:IsA("BasePart") then
             applyChamsToPart(part, state)
         end
     end
     
-    local accessories = char:FindFirstChild("Accessories")
-    if accessories then
-        for _, accessory in ipairs(accessories:GetChildren()) do
-            if accessory:IsA("Accessory") then
-                for _, part in ipairs(accessory:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        applyChamsToPart(part, state)
-                    end
+    -- Также проверяем все дочерние элементы на случай если части называются по-другому
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            for _, name in ipairs(CHAMS_PARTS) do
+                if part.Name == name then
+                    applyChamsToPart(part, state)
+                    break
                 end
             end
         end
@@ -486,7 +519,7 @@ local function clearAllChams()
 end
 
 -- ============================================
--- TRACERS ФУНКЦИИ (исправленные - показывают за экраном)
+-- TRACERS ФУНКЦИИ
 -- ============================================
 
 local tracerObjects = {}
@@ -542,7 +575,6 @@ local function updateTracers()
                         tracer.To = Vector2.new(pos.X, pos.Y)
                     else
                         local direction = (rootPart.Position - camera.CFrame.Position).Unit
-                        local lookVector = camera.CFrame.LookVector
                         local rightVector = camera.CFrame.RightVector
                         local upVector = camera.CFrame.UpVector
                         
@@ -671,7 +703,6 @@ local function removeESP(targetPlayer)
         tracerObjects[targetPlayer]:Remove()
         tracerObjects[targetPlayer] = nil
     end
-    -- Очищаем подключения для этого игрока
     if charConnections[targetPlayer] then
         for _, conn in ipairs(charConnections[targetPlayer]) do
             conn:Disconnect()
@@ -704,12 +735,10 @@ end
 local function setupCharacterMonitoring(char, targetPlayer)
     if not char then return end
     
-    -- Создаем таблицу для подключений если её нет
     if not charConnections[targetPlayer] then
         charConnections[targetPlayer] = {}
     end
     
-    -- Очищаем старые подключения
     for _, conn in ipairs(charConnections[targetPlayer]) do
         conn:Disconnect()
     end
@@ -717,7 +746,12 @@ local function setupCharacterMonitoring(char, targetPlayer)
     
     local descendantAddedConnection = char.DescendantAdded:Connect(function(part)
         if espEnabled and espSettings.showChams and part:IsA("BasePart") then
-            applyChamsToPart(part, true)
+            for _, name in ipairs(CHAMS_PARTS) do
+                if part.Name == name then
+                    applyChamsToPart(part, true)
+                    break
+                end
+            end
         end
     end)
     
@@ -1124,7 +1158,7 @@ local ChamsToggle = TabVisuals:CreateToggle({
     Name = "Chams (подсветка через стены)",
     CurrentValue = false,
     Flag = "ChamsToggle",
-    Info = "Подсвечивает игроков через стены\nРаботает только на некоторых играх",
+    Info = "Подсвечивает скелет игрока через стены",
     Callback = function(Value)
         espSettings.showChams = Value
         updateVisualsSettings()
@@ -1135,7 +1169,7 @@ local ChamsColorPicker = TabVisuals:CreateColorPicker({
     Name = "Цвет Chams",
     Color = Color3.fromRGB(255, 0, 0),
     Flag = "ChamsColor",
-    Info = "Выбери цвет подсветки",
+    Info = "Выбери цвет подсветки скелета",
     Callback = function(Color)
         espSettings.chamsColor = Color
         updateVisualsSettings()

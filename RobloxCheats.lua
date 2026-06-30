@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch021",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch022",
 })
 
 -- ============================================
@@ -416,29 +416,21 @@ local function createOutline(char, rootPart, head, color)
     group.Name = "OutlineGroup"
     group.Parent = char
     
-    -- Создаём 4 линии контура
-    local parts = {
-        {Vector3.new(-1.5, 0, 0), Vector3.new(1.5, 0, 0), "Bottom"},  -- Низ
-        {Vector3.new(-1.5, 0, 0), Vector3.new(-1.5, 0, 0), "Left"},   -- Левая сторона
-        {Vector3.new(1.5, 0, 0), Vector3.new(1.5, 0, 0), "Right"},    -- Правая сторона
-        {Vector3.new(-1.5, 0, 0), Vector3.new(1.5, 0, 0), "Top"},     -- Верх
-    }
-    
-    for _, data in ipairs(parts) do
+    for i = 1, 4 do
         local line = Instance.new("Part")
         line.Size = Vector3.new(3, 0.1, 0.1)
         line.Anchored = true
         line.CanCollide = false
         line.Material = Enum.Material.SmoothPlastic
         line.Color = color
-        line.Transparency = 0.5
+        line.Transparency = 0
         line.Parent = group
     end
     
     return group
 end
 
-local function updateOutline(group, rootPart, head, color, camera)
+local function updateOutline(group, rootPart, head, color)
     local rootPos = rootPart.Position
     local headPos = head and head.Position or rootPart.Position + Vector3.new(0, 2.5, 0)
     
@@ -447,25 +439,21 @@ local function updateOutline(group, rootPart, head, color, camera)
     
     local children = group:GetChildren()
     if #children >= 4 then
-        -- Нижняя линия
         children[1].Size = Vector3.new(width, 0.1, 0.1)
         children[1].Position = rootPos + Vector3.new(0, -height/2, 0)
         
-        -- Левая линия
         children[2].Size = Vector3.new(0.1, height, 0.1)
         children[2].Position = rootPos + Vector3.new(-width/2, 0, 0)
         
-        -- Правая линия
         children[3].Size = Vector3.new(0.1, height, 0.1)
         children[3].Position = rootPos + Vector3.new(width/2, 0, 0)
         
-        -- Верхняя линия
         children[4].Size = Vector3.new(width, 0.1, 0.1)
         children[4].Position = rootPos + Vector3.new(0, height/2, 0)
         
-        -- Обновляем цвет
         for _, part in ipairs(children) do
             part.Color = color
+            part.Transparency = 0
         end
     end
 end
@@ -504,11 +492,10 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- КОНТУР (4 линии вокруг игрока)
+    -- КОНТУР
     local outlineGroup = createOutline(char, rootPart, head, espSettings.boxColor)
     espData.outlineGroup = outlineGroup
     
-    -- ОБНОВЛЕНИЕ КОНТУРА
     local outlineConnection = runService.RenderStepped:Connect(function()
         if not espEnabled or not espSettings.showBox then
             if outlineGroup then outlineGroup.Enabled = false end
@@ -529,10 +516,7 @@ local function createESP(targetPlayer)
             return
         end
         
-        local camera = workspace.CurrentCamera
-        if not camera then return end
-        
-        updateOutline(outlineGroup, rootPart, head, espSettings.boxColor, camera)
+        updateOutline(outlineGroup, rootPart, head, espSettings.boxColor)
     end)
     table.insert(espConnections, outlineConnection)
     
@@ -620,6 +604,7 @@ local function updateESPSettings()
             for _, part in ipairs(espData.outlineGroup:GetChildren()) do
                 if part:IsA("Part") then
                     part.Color = espSettings.boxColor
+                    part.Transparency = 0
                 end
             end
         end

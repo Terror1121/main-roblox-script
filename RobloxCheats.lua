@@ -1,13 +1,18 @@
 -- 1. Загружаем библиотеку
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- 2. Создаем главное окно (БЕЗ АВТОСОХРАНЕНИЯ)
+-- 2. Создаем главное окно (С ВКЛЮЧЁННЫМ СОХРАНЕНИЕМ, НО БЕЗ АВТОЗАГРУЗКИ)
 local Window = Rayfield:CreateWindow({
     Name = "Main Script",
     LoadingTitle = "Загрузка...",
     LoadingSubtitle = "by namesick",
     ScriptID = "sid_eo08v93jcdta",
     ToggleUIKeybind = Enum.KeyCode.G,
+    ConfigurationSaving = {
+        Enabled = true,          -- 👈 ВКЛЮЧАЕМ, ЧТОБЫ КНОПКИ РАБОТАЛИ
+        FolderName = nil,
+        FileName = "MainConfig"
+    },
 })
 
 -- 3. Создаем вкладки
@@ -24,7 +29,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch034",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch035",
 })
 
 -- ============================================
@@ -526,16 +531,13 @@ local function clearAllESP()
 end
 
 local function getPart(char, r15Name)
-    -- Получаем список возможных имен для этой части
     local possibleNames = PART_MAPPING[r15Name] or {r15Name}
     
-    -- Пробуем найти по точному совпадению
     for _, name in ipairs(possibleNames) do
         local part = char:FindFirstChild(name)
         if part then return part end
     end
     
-    -- Если не нашли, ищем по частичному совпадению (для кастомных моделей)
     local searchLower = r15Name:lower()
     for _, child in ipairs(char:GetChildren()) do
         if child:IsA("BasePart") then
@@ -631,7 +633,6 @@ local function createESP(targetPlayer)
         local camera = workspace.CurrentCamera
         if not camera then return end
         
-        -- Обновляем линии скелета
         for _, data in ipairs(lines) do
             local part1 = getPart(char, data.part1)
             local part2 = getPart(char, data.part2)
@@ -666,7 +667,6 @@ local function createESP(targetPlayer)
             end
         end
         
-        -- ИМЯ
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         local head = getPart(char, "Head")
         if rootPart then
@@ -683,7 +683,6 @@ local function createESP(targetPlayer)
             nameLabel.Visible = false
         end
         
-        -- ЗДОРОВЬЕ
         local humanoid = char:FindFirstChildOfClass("Humanoid")
         if espEnabled and espSettings.showHealth and humanoid and rootPart then
             local rootPos, rootOnScreen = camera:WorldToScreenPoint(rootPart.Position)
@@ -708,7 +707,6 @@ local function createESP(targetPlayer)
     local connection = runService.RenderStepped:Connect(updateESP)
     table.insert(espConnections, connection)
     
-    -- ОБНОВЛЕНИЕ ПРИ ПЕРЕРОЖДЕНИИ
     local characterAddedConnection
     characterAddedConnection = targetPlayer.CharacterAdded:Connect(function()
         if espEnabled then
@@ -936,4 +934,31 @@ player.CharacterAdded:Connect(function()
         enableFly()
         FlyToggle:Set(true)
     end
-    if noclipEnabled
+    if noclipEnabled then
+        disableNoclip()
+        task.wait(0.1)
+        enableNoclip()
+        NoclipToggle:Set(true)
+    end
+    if jumpEnabled then
+        disableJump()
+        task.wait(0.1)
+        enableJump()
+        JumpToggle:Set(true)
+    end
+end)
+
+-- ============================================
+-- ❌ УБРАЛ АВТОЗАГРУЗКУ КОНФИГА
+-- ============================================
+
+-- ============================================
+-- ВЫВОД В КОНСОЛЬ
+-- ============================================
+print("✅ Меню загружено! Нажми G для открытия.")
+print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
+print("🪁 Полет: включи через переключатель или нажми " .. FlyKeybind.CurrentKeybind)
+print("🧱 Noclip: включи через переключатель или нажми " .. NoclipKeybind.CurrentKeybind)
+print("🦘 Бесконечный прыжок: включи через переключатель")
+print("👁️ Визуал: включи через переключатель во вкладке Визуал")
+print("💾 Конфиги: сохраняй и загружай вручную во вкладке Конфиги")

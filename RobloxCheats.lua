@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch010",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch011",
 })
 
 -- ============================================
@@ -444,12 +444,13 @@ local function createESP(targetPlayer)
     espData.nameLabel = nameLabel
     espData.nameBillboard = nameBillboard
     
-    -- БОКС (BoxHandleAdornment)
+    -- БОКС (BoxHandleAdornment с DepthMode)
     local box = Instance.new("BoxHandleAdornment")
     box.Size = Vector3.new(2, 4, 2)
     box.Color3 = espSettings.boxColor
     box.Transparency = 0.3
     box.AlwaysOnTop = true
+    box.DepthMode = Enum.DepthMode.AlwaysOnTop  -- 👈 КЛЮЧЕВОЕ
     box.Adornee = rootPart
     box.Parent = char
     box.Visible = espEnabled and espSettings.showBox

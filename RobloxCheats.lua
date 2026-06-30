@@ -39,7 +39,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch040",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch041",
 })
 
 -- ============================================
@@ -150,7 +150,7 @@ local flySpeed = 200
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
-local flyKeybind = "X" -- Клавиша для полета
+local flyKeybind = "X"
 
 local function enableFly()
     if flying then return end
@@ -230,6 +230,8 @@ local function toggleFly()
     else
         enableFly()
     end
+    -- Обновляем значение тогла без вызова колбэка
+    FlyToggle:Set(flying, true)
 end
 
 local FlyToggle = Tab:CreateToggle({
@@ -258,7 +260,6 @@ local FlySpeedSlider = Tab:CreateSlider({
     end,
 })
 
--- ВОССТАНОВЛЕННЫЙ КЕЙБИНД ДЛЯ ПОЛЕТА
 local FlyKeybind = Tab:CreateKeybind({
     Name = "Клавиша для полета",
     CurrentKeybind = "X",
@@ -276,7 +277,7 @@ local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
 local noclipEnabled = false
 local noclipRenderConnection = nil
-local noclipKeybind = "V" -- Клавиша для noclip
+local noclipKeybind = "V"
 
 local function enableNoclip()
     if noclipEnabled then return end
@@ -296,9 +297,10 @@ local function toggleNoclip()
     else
         enableNoclip()
     end
+    -- Обновляем значение тогла без вызова колбэка
+    NoclipToggle:Set(noclipEnabled, true)
 end
 
--- Исправленный Noclip
 if noclipRenderConnection then
     noclipRenderConnection:Disconnect()
     noclipRenderConnection = nil
@@ -328,7 +330,6 @@ local NoclipToggle = Tab:CreateToggle({
     end,
 })
 
--- ВОССТАНОВЛЕННЫЙ КЕЙБИНД ДЛЯ NOCLIP
 local NoclipKeybind = Tab:CreateKeybind({
     Name = "Клавиша для Noclip",
     CurrentKeybind = "V",
@@ -411,15 +412,12 @@ local espSettings = {
     nameSize = 14,
 }
 
--- ИСПРАВЛЕННЫЙ МАППИНГ
 local function getPart(char, partName)
     if not char or not partName then return nil end
     
-    -- Прямой поиск
     local part = char:FindFirstChild(partName)
     if part then return part end
     
-    -- Поиск по всем частям
     for _, child in ipairs(char:GetChildren()) do
         if child:IsA("BasePart") then
             if child.Name == partName then
@@ -428,7 +426,6 @@ local function getPart(char, partName)
         end
     end
     
-    -- Специальные случаи для R6
     if partName == "UpperTorso" then
         return char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart")
     elseif partName == "LowerTorso" then
@@ -448,7 +445,6 @@ local function getPart(char, partName)
     return nil
 end
 
--- СКЕЛЕТНЫЕ СОЕДИНЕНИЯ
 local SKELETON_CONNECTIONS = {
     {"Head", "UpperTorso"},
     {"UpperTorso", "LowerTorso"},
@@ -510,7 +506,6 @@ local function createESP(targetPlayer)
     local espData = {}
     local lines = {}
     
-    -- ИМЯ
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0, 200, 0, 30)
     nameLabel.BackgroundTransparency = 1
@@ -522,7 +517,6 @@ local function createESP(targetPlayer)
     nameLabel.Parent = espGui
     espData.nameLabel = nameLabel
     
-    -- ЛИНИИ
     for _, connection in ipairs(SKELETON_CONNECTIONS) do
         local line = Instance.new("Frame")
         line.Size = UDim2.new(0, 1, 0, 3)
@@ -539,7 +533,6 @@ local function createESP(targetPlayer)
     end
     espData.lines = lines
     
-    -- ЗДОРОВЬЕ
     local healthBg = Instance.new("Frame")
     healthBg.Size = UDim2.new(0, 80, 0, 10)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -583,7 +576,6 @@ local function createESP(targetPlayer)
         local camera = workspace.CurrentCamera
         if not camera then return end
         
-        -- Отрисовка скелета
         for _, data in ipairs(lines) do
             local part1 = getPart(char, data.part1)
             local part2 = getPart(char, data.part2)
@@ -617,7 +609,6 @@ local function createESP(targetPlayer)
             end
         end
         
-        -- Имя
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         local head = getPart(char, "Head")
         if rootPart then
@@ -634,7 +625,6 @@ local function createESP(targetPlayer)
             nameLabel.Visible = false
         end
         
-        -- Здоровье
         local humanoid = char:FindFirstChildOfClass("Humanoid")
         if espEnabled and espSettings.showHealth and humanoid and rootPart then
             local rootPos, rootOnScreen = camera:WorldToScreenPoint(rootPart.Position)
@@ -785,7 +775,6 @@ local function createCounterLabel()
     label.Parent = screenGui
     espCounterLabel = label
     
-    -- Обновление счетчика
     game:GetService("RunService").Heartbeat:Connect(function()
         if not espCounterEnabled then
             if label then label.Visible = false end
@@ -837,7 +826,7 @@ local DestroyButton = TabPr:CreateButton({
 })
 
 -- ============================================
--- ВОССТАНОВЛЕННЫЕ ОБРАБОТЧИКИ КЛАВИШ
+-- ВОССТАНОВЛЕННЫЕ ОБРАБОТЧИКИ КЛАВИШ (ИСПРАВЛЕННЫЕ)
 -- ============================================
 
 -- Кейбинд для полета
@@ -845,8 +834,10 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == flyKeybind then
         toggleFly()
-        FlyToggle:Set(flying)
-        print("🔑 Клавиша полета нажата, flying:", flying)
+        -- Обновляем только если это не вызвано самим собой
+        if not FlyToggle.CurrentValue == flying then
+            FlyToggle:Set(flying, true)
+        end
     end
 end)
 
@@ -855,8 +846,9 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == noclipKeybind then
         toggleNoclip()
-        NoclipToggle:Set(noclipEnabled)
-        print("🔑 Клавиша Noclip нажата, noclipEnabled:", noclipEnabled)
+        if not NoclipToggle.CurrentValue == noclipEnabled then
+            NoclipToggle:Set(noclipEnabled, true)
+        end
     end
 end)
 
@@ -880,7 +872,6 @@ player.CharacterAdded:Connect(function()
         task.wait(0.5)
         refreshAllESP()
     end
-    -- Восстановление функций при респавне
     task.wait(0.5)
     if flying then
         enableFly()
@@ -900,7 +891,6 @@ player.CharacterAdded:Connect(function()
     end
 end)
 
--- Инициализация ESP для существующих игроков
 for _, targetPlayer in ipairs(Players:GetPlayers()) do
     if targetPlayer ~= player then
         targetPlayer.CharacterAdded:Connect(function()

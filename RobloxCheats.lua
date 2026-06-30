@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch002",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch003",
 })
 
 -- ============================================

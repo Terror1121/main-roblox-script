@@ -13,7 +13,7 @@ local Window = Rayfield:CreateWindow({
 -- 3. Создаем вкладки
 local TabInf = Window:CreateTab("Информация", "info")
 local Tab = Window:CreateTab("Игрок", "user-round")
-local TabVisuals = Window:CreateTab("Визуал", "scan-eye") -- 👈 ПЕРЕИМЕНОВАНО
+local TabVisuals = Window:CreateTab("Визуал", "scan-eye")
 local TabPr = Window:CreateTab("Прочее", "wrench")
 
 -- ============================================
@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch030",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch031",
 })
 
 -- ============================================
@@ -382,10 +382,10 @@ local espGui = nil
 
 local espSettings = {
     showName = true,
-    showSkeleton = true,  -- 👈 ПЕРЕИМЕНОВАНО
+    showSkeleton = true,
     showHealth = true,
     nameColor = Color3.fromRGB(255, 255, 255),
-    skeletonColor = Color3.fromRGB(0, 255, 255),  -- 👈 ПЕРЕИМЕНОВАНО
+    skeletonColor = Color3.fromRGB(0, 255, 255),
     healthColor = Color3.fromRGB(0, 255, 0),
     nameSize = 20,
 }
@@ -430,10 +430,10 @@ local function createESPGui()
     if espGui then return end
     espGui = Instance.new("ScreenGui")
     espGui.Name = "VisualsGui"
-    espGui.Parent = game.CoreGui
+    espGui.Parent = player.PlayerGui  -- 👈 ИЗМЕНЕНО НА PlayerGui
     espGui.ResetOnSpawn = false
     espGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    espGui.DisplayOrder = 999
+    espGui.DisplayOrder = 0  -- 👈 УБРАЛ 999, ЧТОБЫ НЕ ПЕРЕКРЫВАТЬ
 end
 
 local function removeESP(targetPlayer)
@@ -682,6 +682,7 @@ local function updateVisualsSettings()
             for _, data in ipairs(espData.lines) do
                 data.frame.BackgroundColor3 = espSettings.skeletonColor
                 data.frame.BackgroundTransparency = 0
+                data.frame.Visible = espEnabled and espSettings.showSkeleton
             end
         end
         if espData.healthBar then
@@ -727,7 +728,7 @@ end
 -- ИНТЕРФЕЙС ВИЗУАЛ В МЕНЮ
 -- ============================================
 
-local SectionVisuals = TabVisuals:CreateSection("Настройки визуала")
+local SectionVisuals = TabVisuals:CreateSection("Настройки ESP")  -- 👈 ПЕРЕИМЕНОВАНО
 
 local ESPToggle = TabVisuals:CreateToggle({
     Name = "Включить ESP",
@@ -751,7 +752,7 @@ local NameColorPicker = TabVisuals:CreateColorPicker({
 })
 
 local SkeletonColorPicker = TabVisuals:CreateColorPicker({
-    Name = "Цвет скелета",  -- 👈 ПЕРЕИМЕНОВАНО
+    Name = "Цвет скелета",
     Color = Color3.fromRGB(0, 255, 255),
     Flag = "VisualSkeletonColor",
     Info = "Выбери цвет для скелета игрока",
@@ -784,20 +785,13 @@ local NameToggle = TabVisuals:CreateToggle({
 })
 
 local SkeletonToggle = TabVisuals:CreateToggle({
-    Name = "Показывать скелет",  -- 👈 ПЕРЕИМЕНОВАНО
+    Name = "Показывать скелет",
     CurrentValue = true,
     Flag = "VisualSkeletonToggle",
     Info = "Показывает скелет игрока (контур)",
     Callback = function(Value)
         espSettings.showSkeleton = Value
-        -- Применяем изменение к уже существующим объектам
-        for _, espData in pairs(espObjects) do
-            if espData.lines then
-                for _, data in ipairs(espData.lines) do
-                    data.frame.Visible = espEnabled and Value
-                end
-            end
-        end
+        updateVisualsSettings()  -- 👈 ТЕПЕРЬ ОБНОВЛЯЕТ ВИДИМОСТЬ
     end,
 })
 
@@ -825,7 +819,6 @@ local NameSizeSlider = TabVisuals:CreateSlider({
         updateVisualsSettings()
     end,
 })
--- 👇 УДАЛЕН ПОЛЗУНОК РАЗМЕРА ЗДОРОВЬЯ
 
 -- ============================================
 -- ТЕСТОВАЯ КНОПКА

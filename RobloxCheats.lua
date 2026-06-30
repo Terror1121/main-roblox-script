@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch007",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch008",
 })
 
 -- ============================================
@@ -373,12 +373,11 @@ local JumpToggle = Tab:CreateToggle({
 })
 
 -- ============================================
--- СЕКЦИЯ: ESP (ПОВЕРХ ВСЕГО)
+-- СЕКЦИЯ: ESP (BILLBOARDGUI — ГАРАНТИРОВАННО РАБОТАЕТ)
 -- ============================================
 local espEnabled = false
 local espConnections = {}
 local espObjects = {}
-local espGui = nil
 
 local espSettings = {
     showName = true,
@@ -391,23 +390,12 @@ local espSettings = {
     healthSize = 3,
 }
 
-local function createESPGui()
-    if espGui then return end
-    espGui = Instance.new("ScreenGui")
-    espGui.Name = "ESPGui"
-    espGui.Parent = game.CoreGui
-    espGui.ResetOnSpawn = false
-    espGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    espGui.DisplayOrder = 999
-end
-
 local function removeESP(targetPlayer)
     local espData = espObjects[targetPlayer]
     if espData then
-        if espData.nameLabel then espData.nameLabel:Destroy() end
-        if espData.boxFrame then espData.boxFrame:Destroy() end
-        if espData.healthBg then espData.healthBg:Destroy() end
-        if espData.healthBar then espData.healthBar:Destroy() end
+        if espData.nameBillboard then espData.nameBillboard:Destroy() end
+        if espData.boxBillboard then espData.boxBillboard:Destroy() end
+        if espData.healthBillboard then espData.healthBillboard:Destroy() end
         espObjects[targetPlayer] = nil
     end
 end
@@ -421,51 +409,76 @@ local function clearAllESP()
         removeESP(targetPlayer)
     end
     espObjects = {}
-    if espGui then
-        espGui:Destroy()
-        espGui = nil
-    end
 end
 
 local function createESP(targetPlayer)
     if targetPlayer == player then return end
     
-    createESPGui()
+    local char = targetPlayer.Character
+    if not char then return end
+    
+    local head = char:FindFirstChild("Head")
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
     
     local espData = {}
     
     -- ИМЯ
+    local nameBillboard = Instance.new("BillboardGui")
+    nameBillboard.Size = UDim2.new(0, 200, 0, 30)
+    nameBillboard.Adornee = head or rootPart
+    nameBillboard.StudsOffset = Vector3.new(0, (head and 3.5 or 1.5), 0)
+    nameBillboard.AlwaysOnTop = true
+    nameBillboard.ResetOnSpawn = false
+    nameBillboard.Parent = char
+    nameBillboard.Enabled = espEnabled and espSettings.showName
+    
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(0, 200, 0, 30)
+    nameLabel.Size = UDim2.new(1, 0, 1, 0)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = targetPlayer.Name
     nameLabel.TextColor3 = espSettings.nameColor
     nameLabel.TextSize = espSettings.nameSize
     nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.Visible = false
-    nameLabel.Parent = espGui
+    nameLabel.Parent = nameBillboard
     espData.nameLabel = nameLabel
+    espData.nameBillboard = nameBillboard
     
     -- БОКС
+    local boxBillboard = Instance.new("BillboardGui")
+    boxBillboard.Size = UDim2.new(0, 4, 0, 6)
+    boxBillboard.Adornee = rootPart
+    boxBillboard.StudsOffset = Vector3.new(0, 0, 0)
+    boxBillboard.AlwaysOnTop = true
+    boxBillboard.ResetOnSpawn = false
+    boxBillboard.Parent = char
+    boxBillboard.Enabled = espEnabled and espSettings.showBox
+    
     local boxFrame = Instance.new("Frame")
-    boxFrame.Size = UDim2.new(0, 100, 0, 150)
+    boxFrame.Size = UDim2.new(1, 0, 1, 0)
     boxFrame.BackgroundTransparency = 1
-    boxFrame.BorderSizePixel = 3
+    boxFrame.BorderSizePixel = 2
     boxFrame.BorderColor3 = espSettings.boxColor
-    boxFrame.Visible = false
-    boxFrame.Parent = espGui
+    boxFrame.Parent = boxBillboard
     espData.boxFrame = boxFrame
+    espData.boxBillboard = boxBillboard
     
     -- ЗДОРОВЬЕ
+    local healthBillboard = Instance.new("BillboardGui")
+    healthBillboard.Size = UDim2.new(0, 3, 0, 0.4)
+    healthBillboard.Adornee = head or rootPart
+    healthBillboard.StudsOffset = Vector3.new(0, (head and 2.5 or 0.5), 0)
+    healthBillboard.AlwaysOnTop = true
+    healthBillboard.ResetOnSpawn = false
+    healthBillboard.Parent = char
+    healthBillboard.Enabled = espEnabled and espSettings.showHealth
+    
     local healthBg = Instance.new("Frame")
-    healthBg.Size = UDim2.new(0, 80, 0, 10)
+    healthBg.Size = UDim2.new(1, 0, 1, 0)
     healthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    healthBg.BackgroundTransparency = 0.5
-    healthBg.BorderSizePixel = 1
-    healthBg.BorderColor3 = Color3.fromRGB(255, 255, 255)
-    healthBg.Visible = false
-    healthBg.Parent = espGui
-    espData.healthBg = healthBg
+    healthBg.BackgroundTransparency = 0.4
+    healthBg.BorderSizePixel = 0
+    healthBg.Parent = healthBillboard
     
     local healthBar = Instance.new("Frame")
     healthBar.Size = UDim2.new(1, 0, 1, 0)
@@ -473,86 +486,31 @@ local function createESP(targetPlayer)
     healthBar.BorderSizePixel = 0
     healthBar.Parent = healthBg
     espData.healthBar = healthBar
+    espData.healthBg = healthBg
+    espData.healthBillboard = healthBillboard
     
     espObjects[targetPlayer] = espData
     
-    local connection = runService.RenderStepped:Connect(function()
-        if not espEnabled then return end
-        
-        local char = targetPlayer.Character
-        if not char then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
-            return
-        end
-        
-        local rootPart = char:FindFirstChild("HumanoidRootPart")
-        local head = char:FindFirstChild("Head")
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if not rootPart then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
-            return
-        end
-        
-        local camera = workspace.CurrentCamera
-        if not camera then return end
-        
-        local rootPos, rootOnScreen = camera:WorldToScreenPoint(rootPart.Position)
-        local headPos, headOnScreen = camera:WorldToScreenPoint((head and head.Position or rootPart.Position) + Vector3.new(0, 2, 0))
-        
-        if not rootOnScreen then
-            nameLabel.Visible = false
-            boxFrame.Visible = false
-            healthBg.Visible = false
-            return
-        end
-        
-        local playerHeight = math.abs(rootPos.Y - headPos.Y)
-        local playerWidth = playerHeight * 0.4
-        local boxSize = math.max(playerWidth, 50)
-        local boxHeight = math.max(playerHeight, 70)
-        
-        -- ИМЯ
-        if espSettings.showName then
-            nameLabel.Visible = true
-            nameLabel.Position = UDim2.new(0, headPos.X - 100, 0, headPos.Y - 40)
-            nameLabel.TextColor3 = espSettings.nameColor
-            nameLabel.TextSize = espSettings.nameSize
-        else
-            nameLabel.Visible = false
-        end
-        
-        -- БОКС
-        if espSettings.showBox then
-            boxFrame.Visible = true
-            boxFrame.Size = UDim2.new(0, boxSize, 0, boxHeight)
-            boxFrame.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 5)
-            boxFrame.BorderColor3 = espSettings.boxColor
-            boxFrame.BorderSizePixel = 3
-        else
-            boxFrame.Visible = false
-        end
-        
-        -- ЗДОРОВЬЕ
-        if espSettings.showHealth and humanoid then
-            local health = humanoid.Health
-            local maxHealth = humanoid.MaxHealth
-            local percent = math.clamp(health / maxHealth, 0, 1)
-            
-            healthBg.Visible = true
-            healthBg.Size = UDim2.new(0, boxSize, 0, 10)
-            healthBg.Position = UDim2.new(0, rootPos.X - boxSize/2, 0, headPos.Y - 25)
-            healthBar.Size = UDim2.new(percent, 0, 1, 0)
-            healthBar.BackgroundColor3 = espSettings.healthColor
-        else
-            healthBg.Visible = false
-        end
-    end)
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        local healthConnection = runService.RenderStepped:Connect(function()
+            if not espEnabled or not espSettings.showHealth then
+                if healthBillboard then healthBillboard.Enabled = false end
+                return
+            end
+            if healthBillboard then healthBillboard.Enabled = true end
+            if humanoid and healthBar then
+                local health = humanoid.Health
+                local maxHealth = humanoid.MaxHealth
+                local percent = math.clamp(health / maxHealth, 0, 1)
+                healthBar.Size = UDim2.new(percent, 0, 1, 0)
+                healthBar.BackgroundColor3 = espSettings.healthColor
+                healthBillboard.Size = UDim2.new(0, espSettings.healthSize * 3, 0, espSettings.healthSize * 0.4)
+            end
+        end)
+        table.insert(espConnections, healthConnection)
+    end
     
-    table.insert(espConnections, connection)
     return espData
 end
 
@@ -581,13 +539,22 @@ local function updateESPSettings()
         if espData.nameLabel then
             espData.nameLabel.TextColor3 = espSettings.nameColor
             espData.nameLabel.TextSize = espSettings.nameSize
+            if espData.nameBillboard then
+                espData.nameBillboard.Enabled = espEnabled and espSettings.showName
+            end
         end
         if espData.boxFrame then
             espData.boxFrame.BorderColor3 = espSettings.boxColor
-            espData.boxFrame.BorderSizePixel = 3
+            if espData.boxBillboard then
+                espData.boxBillboard.Enabled = espEnabled and espSettings.showBox
+            end
         end
         if espData.healthBar then
             espData.healthBar.BackgroundColor3 = espSettings.healthColor
+            if espData.healthBillboard then
+                espData.healthBillboard.Enabled = espEnabled and espSettings.showHealth
+                espData.healthBillboard.Size = UDim2.new(0, espSettings.healthSize * 3, 0, espSettings.healthSize * 0.4)
+            end
         end
     end
 end

@@ -39,7 +39,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch039",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch040",
 })
 
 -- ============================================
@@ -150,6 +150,7 @@ local flySpeed = 200
 local flyConnection = nil
 local bodyVelocity = nil
 local bodyGyro = nil
+local flyKeybind = "X" -- Клавиша для полета
 
 local function enableFly()
     if flying then return end
@@ -257,6 +258,17 @@ local FlySpeedSlider = Tab:CreateSlider({
     end,
 })
 
+-- ВОССТАНОВЛЕННЫЙ КЕЙБИНД ДЛЯ ПОЛЕТА
+local FlyKeybind = Tab:CreateKeybind({
+    Name = "Клавиша для полета",
+    CurrentKeybind = "X",
+    Flag = "FlyKeybind",
+    Callback = function(Keybind, KeybindObject)
+        flyKeybind = Keybind
+        print("✅ Клавиша полета изменена на:", Keybind)
+    end,
+})
+
 -- ============================================
 -- СЕКЦИЯ: НАСТРОЙКИ NOCLIP
 -- ============================================
@@ -264,6 +276,7 @@ local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 
 local noclipEnabled = false
 local noclipRenderConnection = nil
+local noclipKeybind = "V" -- Клавиша для noclip
 
 local function enableNoclip()
     if noclipEnabled then return end
@@ -312,6 +325,17 @@ local NoclipToggle = Tab:CreateToggle({
         else
             disableNoclip()
         end
+    end,
+})
+
+-- ВОССТАНОВЛЕННЫЙ КЕЙБИНД ДЛЯ NOCLIP
+local NoclipKeybind = Tab:CreateKeybind({
+    Name = "Клавиша для Noclip",
+    CurrentKeybind = "V",
+    Flag = "NoclipKeybind",
+    Callback = function(Keybind, KeybindObject)
+        noclipKeybind = Keybind
+        print("✅ Клавиша Noclip изменена на:", Keybind)
     end,
 })
 
@@ -398,7 +422,6 @@ local function getPart(char, partName)
     -- Поиск по всем частям
     for _, child in ipairs(char:GetChildren()) do
         if child:IsA("BasePart") then
-            -- Проверяем части R15
             if child.Name == partName then
                 return child
             end
@@ -814,6 +837,30 @@ local DestroyButton = TabPr:CreateButton({
 })
 
 -- ============================================
+-- ВОССТАНОВЛЕННЫЕ ОБРАБОТЧИКИ КЛАВИШ
+-- ============================================
+
+-- Кейбинд для полета
+userInput.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode.Name == flyKeybind then
+        toggleFly()
+        FlyToggle:Set(flying)
+        print("🔑 Клавиша полета нажата, flying:", flying)
+    end
+end)
+
+-- Кейбинд для Noclip
+userInput.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode.Name == noclipKeybind then
+        toggleNoclip()
+        NoclipToggle:Set(noclipEnabled)
+        print("🔑 Клавиша Noclip нажата, noclipEnabled:", noclipEnabled)
+    end
+end)
+
+-- ============================================
 -- ОБРАБОТЧИКИ ИГРОКОВ
 -- ============================================
 
@@ -871,7 +918,7 @@ end
 -- ============================================
 print("✅ Меню загружено! Нажми G для открытия.")
 print("⚙️ Настрой скорость через ползунок, включи спидхак переключателем.")
-print("🪁 Полет: включи через переключатель")
-print("🧱 Noclip: включи через переключатель")
+print("🪁 Полет: включи через переключатель или нажми " .. flyKeybind)
+print("🧱 Noclip: включи через переключатель или нажми " .. noclipKeybind)
 print("🦘 Бесконечный прыжок: включи через переключатель")
 print("👁️ Визуал: включи через переключатель во вкладке Визуал")

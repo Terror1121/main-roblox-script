@@ -39,7 +39,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch041",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch042",
 })
 
 -- ============================================
@@ -152,6 +152,20 @@ local bodyVelocity = nil
 local bodyGyro = nil
 local flyKeybind = "X"
 
+-- СОЗДАЕМ ТОГЛ ДО ФУНКЦИЙ
+local FlyToggle = Tab:CreateToggle({
+    Name = "Активировать полет",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = function(Value)
+        if Value then
+            enableFly()
+        else
+            disableFly()
+        end
+    end,
+})
+
 local function enableFly()
     if flying then return end
     flying = true
@@ -234,19 +248,6 @@ local function toggleFly()
     FlyToggle:Set(flying, true)
 end
 
-local FlyToggle = Tab:CreateToggle({
-    Name = "Активировать полет",
-    CurrentValue = false,
-    Flag = "FlyToggle",
-    Callback = function(Value)
-        if Value then
-            enableFly()
-        else
-            disableFly()
-        end
-    end,
-})
-
 local FlySpeedSlider = Tab:CreateSlider({
     Name = "Скорость полета",
     Range = {50, 500},
@@ -278,6 +279,20 @@ local SectionNoclip = Tab:CreateSection("Настройки Noclip")
 local noclipEnabled = false
 local noclipRenderConnection = nil
 local noclipKeybind = "V"
+
+-- СОЗДАЕМ ТОГЛ ДО ФУНКЦИЙ
+local NoclipToggle = Tab:CreateToggle({
+    Name = "Активировать Noclip",
+    CurrentValue = false,
+    Flag = "NoclipToggle",
+    Callback = function(Value)
+        if Value then
+            enableNoclip()
+        else
+            disableNoclip()
+        end
+    end,
+})
 
 local function enableNoclip()
     if noclipEnabled then return end
@@ -316,19 +331,6 @@ noclipRenderConnection = runService.RenderStepped:Connect(function()
         end
     end
 end)
-
-local NoclipToggle = Tab:CreateToggle({
-    Name = "Активировать Noclip",
-    CurrentValue = false,
-    Flag = "NoclipToggle",
-    Callback = function(Value)
-        if Value then
-            enableNoclip()
-        else
-            disableNoclip()
-        end
-    end,
-})
 
 local NoclipKeybind = Tab:CreateKeybind({
     Name = "Клавиша для Noclip",
@@ -826,7 +828,7 @@ local DestroyButton = TabPr:CreateButton({
 })
 
 -- ============================================
--- ВОССТАНОВЛЕННЫЕ ОБРАБОТЧИКИ КЛАВИШ (ИСПРАВЛЕННЫЕ)
+-- ОБРАБОТЧИКИ КЛАВИШ
 -- ============================================
 
 -- Кейбинд для полета
@@ -834,10 +836,6 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == flyKeybind then
         toggleFly()
-        -- Обновляем только если это не вызвано самим собой
-        if not FlyToggle.CurrentValue == flying then
-            FlyToggle:Set(flying, true)
-        end
     end
 end)
 
@@ -846,9 +844,6 @@ userInput.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode.Name == noclipKeybind then
         toggleNoclip()
-        if not NoclipToggle.CurrentValue == noclipEnabled then
-            NoclipToggle:Set(noclipEnabled, true)
-        end
     end
 end)
 
@@ -875,19 +870,19 @@ player.CharacterAdded:Connect(function()
     task.wait(0.5)
     if flying then
         enableFly()
-        FlyToggle:Set(true)
+        FlyToggle:Set(true, true)
     end
     if noclipEnabled then
         disableNoclip()
         task.wait(0.1)
         enableNoclip()
-        NoclipToggle:Set(true)
+        NoclipToggle:Set(true, true)
     end
     if jumpEnabled then
         disableJump()
         task.wait(0.1)
         enableJump()
-        JumpToggle:Set(true)
+        JumpToggle:Set(true, true)
     end
 end)
 

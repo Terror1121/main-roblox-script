@@ -23,7 +23,7 @@ local SectionInfo = TabInf:CreateSection("О чите")
 
 local InfoParagraph = TabInf:CreateParagraph({
     Title = "Информация",
-    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch-048",
+    Content = "Сделано разработчиком namesick\nВерсия alfa-001-patch-049",
 })
 
 -- ============================================
@@ -396,23 +396,11 @@ local espSettings = {
     tracerThickness = 1,
 }
 
--- Список частей тела для Chams (только основные части скелета)
+-- Только основные части тела для Chams (минимум, чтобы не было белых блоков)
 local CHAMS_PARTS = {
     "Head",
-    "UpperTorso",
+    "UpperTorso", 
     "LowerTorso",
-    "LeftUpperArm",
-    "LeftLowerArm",
-    "LeftHand",
-    "RightUpperArm",
-    "RightLowerArm",
-    "RightHand",
-    "LeftUpperLeg",
-    "LeftLowerLeg",
-    "LeftFoot",
-    "RightUpperLeg",
-    "RightLowerLeg",
-    "RightFoot",
     "HumanoidRootPart"
 }
 
@@ -422,7 +410,7 @@ local originalProperties = {}
 local charConnections = {}
 
 -- ============================================
--- CHAMS ФУНКЦИИ (исправленные - только основные части)
+-- CHAMS ФУНКЦИИ (исправленные - только torso и голова)
 -- ============================================
 
 local function saveOriginalProperties(part)
@@ -438,7 +426,7 @@ end
 local function applyChamsToPart(part, state)
     if not part or not part:IsA("BasePart") then return end
     
-    -- Проверяем, является ли часть частью тела (по имени)
+    -- Проверяем, является ли часть основной частью тела
     local isBodyPart = false
     for _, name in ipairs(CHAMS_PARTS) do
         if part.Name == name then
@@ -447,7 +435,6 @@ local function applyChamsToPart(part, state)
         end
     end
     
-    -- Если это не часть тела - пропускаем
     if not isBodyPart then return end
     
     if state then
@@ -461,10 +448,6 @@ local function applyChamsToPart(part, state)
             part.Color = originalProperties[part].Color
             part.Transparency = originalProperties[part].Transparency
             originalProperties[part] = nil
-        else
-            part.Material = Enum.Material.Plastic
-            part.Color = Color3.fromRGB(255, 255, 255)
-            part.Transparency = 0
         end
     end
 end
@@ -477,18 +460,6 @@ local function applyChamsToCharacter(char, state)
         local part = char:FindFirstChild(partName)
         if part and part:IsA("BasePart") then
             applyChamsToPart(part, state)
-        end
-    end
-    
-    -- Также проверяем все дочерние элементы на случай если части называются по-другому
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            for _, name in ipairs(CHAMS_PARTS) do
-                if part.Name == name then
-                    applyChamsToPart(part, state)
-                    break
-                end
-            end
         end
     end
 end
@@ -1151,14 +1122,14 @@ local NameSizeSlider = TabVisuals:CreateSlider({
 })
 
 -- ============================================
--- CHAMS В СЕКЦИИ ESP
+-- CHAMS В СЕКЦИИ ESP (упрощенные - только торс и голова)
 -- ============================================
 
 local ChamsToggle = TabVisuals:CreateToggle({
     Name = "Chams (подсветка через стены)",
     CurrentValue = false,
     Flag = "ChamsToggle",
-    Info = "Подсвечивает скелет игрока через стены",
+    Info = "Подсвечивает торс и голову игрока через стены",
     Callback = function(Value)
         espSettings.showChams = Value
         updateVisualsSettings()
@@ -1169,7 +1140,7 @@ local ChamsColorPicker = TabVisuals:CreateColorPicker({
     Name = "Цвет Chams",
     Color = Color3.fromRGB(255, 0, 0),
     Flag = "ChamsColor",
-    Info = "Выбери цвет подсветки скелета",
+    Info = "Выбери цвет подсветки",
     Callback = function(Color)
         espSettings.chamsColor = Color
         updateVisualsSettings()
